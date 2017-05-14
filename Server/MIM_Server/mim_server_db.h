@@ -10,6 +10,7 @@
  * MODIFICATION HISTORY:
  * --------------------------------------
  *      2017-05-15 00:11:10 添加 sSqlChkRet 函数，处理SQL操作结果
+ *      2017-05-15 01:26:06 设置 sSqlChkRet函数为static，并直接定义在mim_server_db.c
 *****************************************************************************/
 
 #ifndef MIM_SERVER_DB_H
@@ -17,23 +18,6 @@
 
 #include <sqlite3.h>
 #include "mim_sc_common.h"
-
-
-/*****************************************************************************
- * DECRIPTION:
- *      检验SQL函数执行结果
- * INPUTS:
- *      sqlite3* sqlHdl --  SQL处理对象
- *      STATUS ret --  相应的SQL函数返回值
- *      char* curOpera --   当前执行的操作名字
- * OUTPUTS:
- *      NONE
- * RETURNS:
- *      NONE
- * CAUTIONS:
- *      static类型，只允许本地使用
-*****************************************************************************/
-void sSqlChkRet(sqlite3* sqlHdl, STATUS ret, char* curOpera);
 
 
 /*****************************************************************************

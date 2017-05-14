@@ -9,6 +9,7 @@
  *      2017.05.13 14:42
  * MODIFICATION HISTORY:
  * --------------------------------------
+ *      2017-05-15 01:27:32 添加 sSqlChkRet 函数，并设置为static模式
 *****************************************************************************/
 #include <stdio.h>
 #include <stdlib.h>
@@ -31,9 +32,9 @@
  * RETURNS:
  *      NONE
  * CAUTIONS:
- *      NONE
+ *      static 静态，只能本文件内使用
 *****************************************************************************/
-void sSqlChkRet(sqlite3* sqlHdl, STATUS ret, char* curOpera)
+static void sSqlChkRet(sqlite3* sqlHdl, STATUS ret, char* curOpera)
 {
     /* 如果返回值不是OK,则输出返回值和警告信息 */
     if (ret != SQLITE_OK)
