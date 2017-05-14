@@ -1,7 +1,3 @@
-node_modules/
-bower_components/
-*.log
-
-Client/build*/
-Server/build*/
-dist/
+Client/build*/*
+Server/build*/*
+!Server/MIM_Server/*
