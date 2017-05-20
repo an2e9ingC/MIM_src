@@ -3,8 +3,9 @@ CONFIG += console
 CONFIG -= app_bundle
 CONFIG -= qt
 
-SOURCES += main.c \
-    mim_server_db.c
+SOURCES += \
+    mim_server_db.c \
+    main.c
 
 HEADERS += \
     mim_sc_common.h \
@@ -12,3 +13,5 @@ HEADERS += \
     mim_server_db.h
 
 LIBS += -lsqlite3
+
+DISTFILES +=

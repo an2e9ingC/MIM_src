@@ -50,18 +50,42 @@ static int callback(void *NotUsed, int argc, char **argv, char **azColName)
 
 int main()
 {
-    const char dbFileName [] = "user_id.db";
-    sqlite3 *sqlHdl = NULL;
-//    const char* data = "Callback function called";
-
-//    STATUS ret = ERROR;
-
-    /* SQL语句 */
-//    char *sql = "SELECT * FROM n3;";
+    sqlite3 *sqlHdl = NULL; //SQL处理对象指针
+    STATUS ret = ERROR;
+    char *sql;
+    char *zErrMsg;
 
     /* 打开数据库 */
-    sDbOpen (dbFileName, &sqlHdl);
+    ret = sDbOpen (DB_FILE, sqlHdl);
+    sSqlChkRet (sqlHdl, ret, "OpenDB");
 
+    sql = "CREATE TABLE test("  \
+          "ID INT PRIMARY KEY     NOT NULL," \
+          "NAME           TEXT    NOT NULL," \
+          "AGE            INT     NOT NULL," \
+          "ADDRESS        CHAR(50)," \
+          "SALARY         REAL );";
+    /* Execute SQL statement */
+    ret = sqlite3_exec(sqlHdl, sql, 0, 0, &zErrMsg);
+    if( ret != SQLITE_OK ){
+        fprintf(stdout, "Table created failed:%s\n", zErrMsg);
+        EXIT(EXIT_FAILURE);
+    }else{
+        fprintf(stdout, "Table created successfully\n");
+    }
+
+
+    /* 初始化数据库即相关表 */
+//    ret = sDbInit(sqlHdl);
+//    if (OK == ret)
+//    {
+//        printf("DB:%s Init OK.", DB_FILE);
+//    }
+//    else
+//    {
+//        printf("DB:%s Init ERROR.", DB_FILE);
+//        EXIT(EXIT_FAILURE);
+//    }
 
     /* 关闭数据库 */
     sDbClose (sqlHdl);
