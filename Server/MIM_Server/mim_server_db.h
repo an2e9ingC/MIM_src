@@ -72,4 +72,26 @@ void sDbClose(sqlite3 *sqlHdl);
 *****************************************************************************/
 STATUS sDbInit(sqlite3* sqlHdl);
 
+/*****************************************************************************
+ * DECRIPTION:
+ *      sDbInsertData2PasswdTbl() 向数据库的USER_PASSWD_TBL表中添加数据
+ * INPUTS:
+ *      sqlHdl  数据库操作对象
+ *      uId     用户账号ID
+ *      uName   用户名
+ *      uPasswd 用户密码
+ * OUTPUTS:
+ *      NONE
+ * RETURNS:
+ *      OK      --  成功
+ *      ERROR   --  失败
+ *      INVALID_PARAM --  参数错误
+ * CAUTIONS:
+ *      NONE
+*****************************************************************************/
+STATUS sDbInsertData2PasswdTbl(sqlite3* sqlHdl,
+                               T_UID uId,
+                               T_UNAME uName,
+                               T_UPASSWD uPasswd);
+
 #endif // MIM_SERVER_H

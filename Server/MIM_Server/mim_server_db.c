@@ -13,6 +13,7 @@
  *      2017-05-15 11:23:31 sSqlChkRet 对外提供
  *      2017-05-15 12:21:20 添加数据库（表）的初始化函数
  *      2017-05-22 11:36:51 删除sDbOpen, 设置sDbClose返回值为void
+ *      2017-05-22 15:31:43 精简.c文件中的函数注释
 *****************************************************************************/
 #include <stdio.h>
 #include <stdlib.h>
@@ -28,12 +29,6 @@
  *      初始化用户密码表 USER_PASSWD_TBL
  * INPUTS:
  *      sqlite3* sqlHdl 数据库操作对象
- * OUTPUTS:
- *      NONE
- * RETURNS:
- *      OK      --  成功
- *      ERROR   --  失败
- *      INVALID_PARAM --  参数错误
  * CAUTIONS:
  *      static
 *****************************************************************************/
@@ -49,6 +44,7 @@ static STATUS sTblUserPasswdInit(sqlite3* sqlHdl)
     ret = sqlite3_exec (sqlHdl, sql, 0, 0, 0);
 
 #ifdef _DEBUG
+
     PRINTF("%s", sql);
     sSqlChkRet (sqlHdl, ret, __FUNCTION__);
 #endif
@@ -61,12 +57,6 @@ static STATUS sTblUserPasswdInit(sqlite3* sqlHdl)
  *      初始化用户基本信息表 USER_INFO_TBL;
  * INPUTS:
  *      sqlite3* sqlHdl 数据库操作对象
- * OUTPUTS:
- *      NONE
- * RETURNS:
- *      OK      --  成功
- *      ERROR   --  失败
- *      INVALID_PARAM --  参数错误
  * CAUTIONS:
  *      static
 *****************************************************************************/
@@ -94,12 +84,6 @@ static STATUS sTblUserInfoInit(sqlite3* sqlHdl)
  *      初始化用户好友列表 USER_FRDS_TBL;
  * INPUTS:
  *      sqlite3* sqlHdl 数据库操作对象
- * OUTPUTS:
- *      NONE
- * RETURNS:
- *      OK      --  成功
- *      ERROR   --  失败
- *      INVALID_PARAM --  参数错误
  * CAUTIONS:
  *      static
 *****************************************************************************/
@@ -127,12 +111,6 @@ static STATUS sTblUserFrdsInit(sqlite3* sqlHdl)
  *      初始化用户在线状态信息表 USER_STAT_TBL;
  * INPUTS:
  *      sqlite3* sqlHdl 数据库操作对象
- * OUTPUTS:
- *      NONE
- * RETURNS:
- *      OK      --  成功
- *      ERROR   --  失败
- *      INVALID_PARAM --  参数错误
  * CAUTIONS:
  *      static
 *****************************************************************************/
@@ -141,7 +119,7 @@ static STATUS sTblUserStatInit(sqlite3* sqlHdl)
     STATUS ret = ERROR;
     char *sql = "CREATE TABLE USER_STAT_TBL("
                 "UID    INT     PRIMARY KEY     NOT NULL,\n"
-                "STAT   TEXT                    NOT NULL,\n"
+                "STAT   TEXT                    NOT NULL\n"
                 ");";
 
     ret = sqlite3_exec (sqlHdl, sql, 0, 0, 0);
@@ -159,12 +137,6 @@ static STATUS sTblUserStatInit(sqlite3* sqlHdl)
  *      初始化 用户密码重置验证问题表 USER_VERIFY_TBL;
  * INPUTS:
  *      sqlite3* sqlHdl 数据库操作对象
- * OUTPUTS:
- *      NONE
- * RETURNS:
- *      OK      --  成功
- *      ERROR   --  失败
- *      INVALID_PARAM --  参数错误
  * CAUTIONS:
  *      static
 *****************************************************************************/
@@ -175,7 +147,7 @@ static STATUS sTblUserVerifyInit(sqlite3* sqlHdl)
                 "UID    INT     PRIMARY KEY     NOT NULL,\n"
                 "Q1     TEXT                    NOT NULL,\n"
                 "Q2     TEXT                    NOT NULL,\n"
-                "Q3     TEXT                    NOT NULL,\n"
+                "Q3     TEXT                    NOT NULL\n"
                 ");";
 
     ret = sqlite3_exec (sqlHdl, sql, 0, 0, 0);
@@ -196,13 +168,6 @@ static STATUS sTblUserVerifyInit(sqlite3* sqlHdl)
  *      sqlite3* sqlHdl --  SQL处理对象
  *      STATUS ret --  相应的SQL函数返回值
  *      char* curOpera --   当前执行的操作名字
- * OUTPUTS:
- *      NONE
- * RETURNS:
- *      OK (0)       //处理成功
- *      ERROR (-1)    //处理失败
- * CAUTIONS:
- *      本函数一般用于DEBUG模式的输出
 *****************************************************************************/
 STATUS sSqlChkRet(sqlite3* sqlHdl, STATUS ret, const char* curOpera)
 {
@@ -243,16 +208,10 @@ STATUS sSqlChkRet(sqlite3* sqlHdl, STATUS ret, const char* curOpera)
  *      数据库的关闭操作
  * INPUTS:
  *      数据库操作对象 sqlite3* sqlHdl
- * OUTPUTS:
- *      NONE
- * RETURNS:
- *      NONE
- * CAUTIONS:
- *      NONE
 *****************************************************************************/
 void sDbClose(sqlite3 *sqlHdl)
 {
-    ret = sqlite3_close(sqlHdl);
+    STATUS ret = sqlite3_close(sqlHdl);
     if (SQLITE_OK == ret)
     {
         PRINTF("[DB Closed OK.]");
@@ -275,21 +234,13 @@ void sDbClose(sqlite3 *sqlHdl)
  *      sDbInit()   初始化数据库：初始化所有表
  * INPUTS:
  *      sqlite3* sqlHdl;    数据库操作对象
- * OUTPUTS:
- *      NONE
- * RETURNS:
- *      OK      --  成功
- *      ERROR   --  失败
- *      INVALID_PARAM --  参数错误
- * CAUTIONS:
- *      NONE
 *****************************************************************************/
 STATUS sDbInit(sqlite3* sqlHdl)
 {
     STATUS ret = ERROR;
 
     /*入参检查*/
-    if (NULL == sqlHdl)
+    if( ISNULL(sqlHdl) )
     {
         PRINTF("sDbInit sqlHdl is NULL.");
         goto o_exit;
@@ -335,5 +286,37 @@ STATUS sDbInit(sqlite3* sqlHdl)
     }
 
 o_exit:
+    return ret;
+}
+
+/*****************************************************************************
+ * DECRIPTION:
+ *      sDbInsertData2PasswdTbl() 向数据库的USER_PASSWD_TBL表中添加数据
+ * INPUTS:
+ *      sqlHdl  数据库操作对象
+ *      uId     用户账号ID
+ *      uName   用户名
+ *      uPasswd 用户密码
+*****************************************************************************/
+STATUS sDbInsertData2PasswdTbl(sqlite3* sqlHdl,
+                               T_UID uId,
+                               T_UNAME uName,
+                               T_UPASSWD uPasswd)
+{
+    STATUS ret = ERROR;
+
+    /* 入参检查 */
+    if (ISNULL(sqlHdl))
+    {
+#ifdef _DEBUG
+        PRINTFILE;
+#endif
+        PRINTF("[%s: sqlHdl is NULL.]", __FUNCTION__);
+        return ret;
+    }
+
+
+
+
     return ret;
 }
