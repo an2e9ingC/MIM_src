@@ -52,8 +52,10 @@ int main()
 {
     sqlite3 *sqlHdl = NULL; //SQL处理对象指针
     STATUS ret = ERROR;
-//    char *sql;
-//    char *zErrMsg;
+
+    PRINTF("-------------------------------------\n"
+           "MIM SERVER INITIALIZING...\n"
+           "-------------------------------------\n");
 
     /* 打开数据库 */
     ret = sqlite3_open (DB_FILE, &sqlHdl);
@@ -72,15 +74,21 @@ int main()
     if (OK == ret)
     {
         PRINTF("DB:%s Init OK.", DB_FILE);
+        PRINTF("-------------------------------------\n"
+               "MIM SERVER INITIALIZATION COMPLETED!\n"
+               "-------------------------------------\n");
     }
     else
     {
         PRINTF("DB:%s Init ERROR.", DB_FILE);
-
+        PRINTF("-------------------------------------\n"
+               "MIM SERVER INITIALIZATION FAILED!\n"
+               "-------------------------------------\n");
     }
 
     /* 关闭数据库 */
     sDbClose (sqlHdl);
+    PRINTF ("\n");
 
     return 0;
 }

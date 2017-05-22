@@ -27,4 +27,4 @@ server_db.o :
 
 .PHONY:clean
 clean:
-	rm -f $(objects) *.~  *.out  mim_server
+	rm -f $(objects) *.~  *.out  mim_server  users.db
