@@ -24,7 +24,13 @@ main.o :  mim_server_db.h mim_sc_common.h
 server_db.o : 
 	gcc -c mim_server_db.c -o server_db.o
 	
+#生成调试文件
+dbg: debug
+
+debug: $(objects)
+	gcc -g $(objects) $(LIBS) -o debug
+	-rm -f $(objects)
 
 .PHONY:clean
 clean:
-	rm -f $(objects) *.~  *.out  mim_server  users.db
+	rm -f $(objects) *.~  *.out  mim_server  users.db debug
