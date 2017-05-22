@@ -69,11 +69,17 @@ typedef enum e_CommonCmd{
 
 #define EXIT(Exit) \
     printf("\n");\
-    exit(Exit)
+    exit(Exit); \
+    printf("\n")
 
-/* 检查指针是否为空NULL */
+/*  检查指针是否为空NULL
+ *  Note: == 判断结果：
+ *      如果相等，等式值是0，符合linux风格
+ *      如果不等，等式值是1
+ *  因此，ISNULL使用三目运算的第二个应该是FALSE
+ *  */
 #define ISNULL(Q) \
-    ((NULL == (void*)Q) ? TRUE : FALSE)
+    ((NULL == Q) ? FALSE : TRUE)
 
 /* 数据库相关数据类型定义 */
 typedef unsigned int T_UID; // 用户id数据类型

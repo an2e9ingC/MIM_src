@@ -20,34 +20,6 @@
 #include "mim_sc_common.h"
 #include "mim_server_db.h"
 
-/*****************************************************************************
- * DECRIPTION:
- *      回调函数，当系统调用 sqlite3_exec 时的回调函数
- * INPUTS:
- *      void *NotUsed --    由 sqlite3_exec 的第四个参数提供
- *      int argc      --    每一行的列数
- *      char **argv   --    表示行中字段值的字符串数组
- *      char **azColName -- 表示列名称的字符串数组
- * OUTPUTS:
- *      NONE
- * RETURNS:
- *      OK      --  成功
- *      ERROR   --  失败
- *      INVALID_PARAM --  参数错误
- * CAUTIONS:
- *      NONE
-*******************************************************************************/
-static int callback(void *NotUsed, int argc, char **argv, char **azColName)
-{
-   int i;
-   printf("%s\n", (char*)NotUsed);
-   for(i=0; i<argc; i++){
-      printf("%s = %s\n", azColName[i], argv[i] ? argv[i] : "NULL");
-   }
-   printf("\n");
-   return 0;
-}
-
 int main()
 {
     sqlite3 *sqlHdl = NULL; //SQL处理对象指针
@@ -84,7 +56,43 @@ int main()
         PRINTF("-------------------------------------\n"
                "MIM SERVER INITIALIZATION FAILED!\n"
                "-------------------------------------\n");
+        EXIT(EXIT_FAILURE);
     }
+
+
+    /************test**************/
+    CR_REG *reg = (CR_REG *)malloc(sizeof(CR_REG));
+    reg->uName = "xuchuan";
+    reg->Q1 = "China";
+    reg->Q2 = "1994";
+    reg->uPasswd= "adsjfasiofajg";
+
+    T_UID uid = 8;
+    ret = sDbInsertData2PasswdTbl(sqlHdl, uid, reg->uName, reg->uPasswd);
+    if(OK != sSqlChkRet (sqlHdl, ret, "test insert"))
+    {
+        PRINTF("_sDbInsertData2PasswdTbl__: FAILED.");
+        return -1;
+    }
+    else
+    {
+        PRINTF("_sDbInsertData2PasswdTbl__: OK.");
+    }
+
+    free(reg);
+
+    ret = sDbSelectConditionFromTbl(sqlHdl, "*", "USER_PASSWD_TBL");
+    if(OK != sSqlChkRet (sqlHdl, ret, "test select"))
+    {
+        PRINTF("_+sDbSelectConditionFromTbl__: FAILED.");
+        return -1;
+    }
+    else
+    {
+        PRINTF("_+sDbSelectConditionFromTbl__: OK.");
+    }
+
+    /************test**************/
 
     /* 关闭数据库 */
     sDbClose (sqlHdl);

@@ -23,6 +23,24 @@
 #include <sqlite3.h>
 #include "mim_sc_common.h"
 
+#define SQL_LEN 200 //定义SQL语句长度
+
+/*****************************************************************************
+ * DECRIPTION:
+ *      回调函数，打印表信息
+ * INPUTS:
+ *      void *execParam --    由 sqlite3_exec 的第四个参数提供
+ *      int  colNum      --    每一行的列数
+ *      char **colVal   --    表示行中字段值的字符串数组
+ *      char **colName -- 表示列名称的字符串数组
+ * OUTPUTS:
+ *      NONE
+ * RETURNS:
+ *      返回执行结果
+ * CAUTIONS:
+ *      NONE
+*******************************************************************************/
+int sDbShowTbl(void *execParam, int colNum, char **colVal, char **colName);
 
 /*****************************************************************************
  * DECRIPTION:
@@ -76,10 +94,10 @@ STATUS sDbInit(sqlite3* sqlHdl);
  * DECRIPTION:
  *      sDbInsertData2PasswdTbl() 向数据库的USER_PASSWD_TBL表中添加数据
  * INPUTS:
- *      sqlHdl  数据库操作对象
- *      uId     用户账号ID
- *      uName   用户名
- *      uPasswd 用户密码
+ *      sqlite3*    数据库操作对象
+ *      T_UID uId   由系统生成的uid,
+ *      T_UNAME     用户名
+ *      T_UPASSWD   用户密码
  * OUTPUTS:
  *      NONE
  * RETURNS:
@@ -89,9 +107,24 @@ STATUS sDbInit(sqlite3* sqlHdl);
  * CAUTIONS:
  *      NONE
 *****************************************************************************/
-STATUS sDbInsertData2PasswdTbl(sqlite3* sqlHdl,
-                               T_UID uId,
-                               T_UNAME uName,
-                               T_UPASSWD uPasswd);
+STATUS sDbInsertData2PasswdTbl(sqlite3*, T_UID, T_UNAME, T_UPASSWD);
+
+/*****************************************************************************
+ * DECRIPTION:
+ *      sDbSelectConditionFromTbl 从表中select出符合条件的表项
+ * INPUTS:
+ *      sqlite3* sqlHdl 操作数据库对象
+ *      char* condition 选择条件
+ *      char* tblName   表名
+ * OUTPUTS:
+ *      NONE
+ * RETURNS:
+ *      OK      --  成功
+ *      ERROR   --  失败
+ *      INVALID_PARAM --  参数错误
+ * CAUTIONS:
+ *      NONE
+*****************************************************************************/
+STATUS sDbSelectConditionFromTbl(sqlite3* sqlHdl, char* condition, char *tblName);
 
 #endif // MIM_SERVER_H

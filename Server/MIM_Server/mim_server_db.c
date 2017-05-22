@@ -37,7 +37,7 @@ static STATUS sTblUserPasswdInit(sqlite3* sqlHdl)
     STATUS ret = ERROR;
     const char *sql = "CREATE TABLE USER_PASSWD_TBL(\n"\
                 "UID    INT     PRIMARY KEY     NOT NULL,\n"\
-                "UNAME  TEXT    KEY             NOT NULL,\n"\
+                "UNAME  TEXT                     NOT NULL,\n"\
                 "UPASSWD    TEXT                NOT NULL\n"\
                 ");";
 
@@ -65,7 +65,7 @@ static STATUS sTblUserInfoInit(sqlite3* sqlHdl)
     STATUS ret = ERROR;
     char *sql = "CREATE TABLE USER_INFO_TBL("
                 "UID    INT     PRIMARY KEY     NOT NULL,\n"
-                "SEX    TEXT    KEY             NOT NULL,\n"
+                "SEX    TEXT                    NOT NULL,\n"
                 "EMAIL  TEXT,   \n"
                 "TEL    TEXT    \n"
                 ");";
@@ -119,7 +119,7 @@ static STATUS sTblUserStatInit(sqlite3* sqlHdl)
     STATUS ret = ERROR;
     char *sql = "CREATE TABLE USER_STAT_TBL("
                 "UID    INT     PRIMARY KEY     NOT NULL,\n"
-                "STAT   TEXT                    NOT NULL\n"
+                "STAT   INT                    NOT NULL\n"
                 ");";
 
     ret = sqlite3_exec (sqlHdl, sql, 0, 0, 0);
@@ -171,8 +171,15 @@ static STATUS sTblUserVerifyInit(sqlite3* sqlHdl)
 *****************************************************************************/
 STATUS sSqlChkRet(sqlite3* sqlHdl, STATUS ret, const char* curOpera)
 {
-    PRINTF("%s:  %s:", __FILE__, __FUNCTION__);
     STATUS stat = ERROR;
+
+    //入参检查
+    if (ISNULL(sqlHdl))
+    {
+        PRINTF("__%s__sqlHdl is NULL.", __FUNCTION__);
+        return ret;
+    }
+
     /* 如果返回值不是OK,则输出返回值和警告信息 */
     if (ret != SQLITE_OK)
     {
@@ -205,13 +212,39 @@ STATUS sSqlChkRet(sqlite3* sqlHdl, STATUS ret, const char* curOpera)
 
 /*****************************************************************************
  * DECRIPTION:
+ *      回调函数，打印表信息
+ * INPUTS:
+ *      void *execParam --    由 sqlite3_exec 的第四个参数提供
+ *      int  colNum      --    每一行的列数
+ *      char **colVal   --    表示行中字段值的字符串数组
+ *      char **colName -- 表示列名称的字符串数组
+*******************************************************************************/
+int sDbShowTbl(void *execParam, int colNum, char **colVal, char **colName)
+{
+    int i;
+    PRINTF("%s\n", (char*)execParam);
+    for(i=0; i<colNum; i++){
+        printf("%s = %s\n", colName[i], colVal[i] ? colVal[i] : "NULL");
+    }
+    printf("\n");
+    return 0;
+}
+
+/*****************************************************************************
+ * DECRIPTION:
  *      数据库的关闭操作
  * INPUTS:
  *      数据库操作对象 sqlite3* sqlHdl
 *****************************************************************************/
 void sDbClose(sqlite3 *sqlHdl)
 {
-    STATUS ret = sqlite3_close(sqlHdl);
+    if (ISNULL(sqlHdl))
+    {
+        PRINTF("__%s__sqlHdl is NULL.", __FUNCTION__);
+        EXIT(EXIT_FAILURE);
+    }
+
+    STATUS ret = sqlite3_close_v2(sqlHdl);
     if (SQLITE_OK == ret)
     {
         PRINTF("[DB Closed OK.]");
@@ -242,7 +275,7 @@ STATUS sDbInit(sqlite3* sqlHdl)
     /*入参检查*/
     if( ISNULL(sqlHdl) )
     {
-        PRINTF("sDbInit sqlHdl is NULL.");
+        PRINTF("__%s__sDbInit sqlHdl is NULL.", __FUNCTION__);
         goto o_exit;
     }
 
@@ -291,17 +324,14 @@ o_exit:
 
 /*****************************************************************************
  * DECRIPTION:
- *      sDbInsertData2PasswdTbl() 向数据库的USER_PASSWD_TBL表中添加数据
+ *      sDbInsertData2PasswdTbl() 向数据库的USER_PASSWD_TBL表中添加数据(注册新用户)
  * INPUTS:
- *      sqlHdl  数据库操作对象
- *      uId     用户账号ID
- *      uName   用户名
- *      uPasswd 用户密码
+ *      sqlHdl    数据库操作对象
+ *      uId       由系统生成的uid,
+ *      uName     用户名
+ *      uPasswd   用户密码
 *****************************************************************************/
-STATUS sDbInsertData2PasswdTbl(sqlite3* sqlHdl,
-                               T_UID uId,
-                               T_UNAME uName,
-                               T_UPASSWD uPasswd)
+STATUS sDbInsertData2PasswdTbl(sqlite3* sqlHdl, T_UID uId, T_UNAME uName, T_UPASSWD uPasswd)
 {
     STATUS ret = ERROR;
 
@@ -315,8 +345,75 @@ STATUS sDbInsertData2PasswdTbl(sqlite3* sqlHdl,
         return ret;
     }
 
+    //构造SQL语句
+    char sql[SQL_LEN] = "INSERT INTO USER_PASSWD_TBL VALUES (";  //SQL语句
+    char tmp[50] = {'\0'};   //临时拥有提取请求命令crReg中相关信息
 
+    sprintf(tmp, "  %d,", uId);
+    strncat(sql, tmp, strlen(tmp)); //填充sql语句的uid部分
 
+    sprintf(tmp, "  '%s',", uName);
+    strncat(sql, tmp, strlen(tmp)); //填充sql语句的用户名部分
+
+    sprintf(tmp, "  '%s');", uPasswd);
+    strncat(sql, tmp, strlen(tmp)); //填充sql语句的upasswd部分
+
+    //执行SQL语句
+#ifdef _DEBUG
+    PRINTF("%s", sql);
+#endif
+    ret = sqlite3_exec (sqlHdl, sql,  NULL, NULL, NULL);
+    sSqlChkRet (sqlHdl, ret, __FUNCTION__);
+
+    return ret;
+}
+
+/*****************************************************************************
+ * DECRIPTION:
+ *      sDbSelectConditionFromTbl 从表中select出符合条件的表项
+ * INPUTS:
+ *      sqlite3* sqlHdl 操作数据库对象
+ *      char* condition 选择条件
+ *      char* tblName   表名
+*****************************************************************************/
+STATUS sDbSelectConditionFromTbl(sqlite3 *sqlHdl, char *condition, char* tblName)
+{
+    STATUS ret = ERROR;
+    char sql[SQL_LEN] = "SELECT ";
+    char tmp[50] = {"\0"};
+
+    /* 入参检查 */
+    if (ISNULL(sqlHdl))
+    {
+#ifdef _DEBUG
+        PRINTFILE;
+#endif
+        PRINTF("[%s: sqlHdl is NULL.]", __FUNCTION__);
+        return ret;
+    }
+
+    PRINTF("condition:%s", condition);
+    PRINTF("tblName:%s", tblName);
+
+    /* 构造SQL语句 */
+    sprintf(tmp, "%s", condition);
+    strncat(sql, tmp, strlen(tmp));
+
+    sprintf(tmp, "%s", " FROM ");
+    strncat(sql, tmp, strlen(tmp));
+
+    sprintf(tmp, "%s", tblName);
+    strncat(sql, tmp, strlen(tmp));
+
+    /* 执行SQL语句 */
+#ifdef _DEBUG
+    PRINTF("__%s__SQL:%s", __FUNCTION__, sql);
+    ret = sqlite3_exec(sqlHdl, sql, sDbShowTbl, (void*)__FUNCTION__, NULL);
+#else
+    ret = sqlite3_exec(sqlHdl, sql, NULL, NULL, NULL);
+#endif
+
+    ret = sSqlChkRet (sqlHdl, ret, (const char*)__FUNCTION__);
 
     return ret;
 }
