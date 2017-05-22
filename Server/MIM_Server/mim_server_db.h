@@ -12,6 +12,7 @@
  *      2017-05-15 00:11:10 添加 sSqlChkRet 函数，处理SQL操作结果
  *      2017-05-15 01:26:06 设置 sSqlChkRet函数为static，并直接定义在mim_server_db.c
  *      2017-05-15 11:21:49 重新设置sSqlChkRet函数为非static，对外提供接口
+ *      2017-05-22 11:35:41 取消sDbOpen函数，sDbClose返回值为void
 *****************************************************************************/
 
 #ifndef MIM_SERVER_DB_H
@@ -36,59 +37,23 @@
  * RETURNS:
  *      NONE
  * CAUTIONS:
+ *      本函数用于DEBUG模式输出
 *****************************************************************************/
-STATUS sSqlChkRet(sqlite3* sqlHdl, STATUS ret, char* curOpera);
-
-/*****************************************************************************
- * DECRIPTION:
- *      数据库的创建或打开操作
- * INPUTS:
- *      数据库文件名 dbFileName
- * OUTPUTS:
- *      返回的数据库操作对象 sqlHdl
- * RETURNS:
- *      OK      --  成功
- *      ERROR   --  失败
- *      INVALID_PARAM --  参数错误
- * CAUTIONS:
- *      1. 如果不在当前文件夹下创建数据库，需要提供完整
- *      路径，最好使用绝对路径;
- *      2. 如果打开失败直接结束进程;
-*********************************************/
-STATUS sDbOpen(const char *dbFileName, sqlite3 *sqlHdl);
+STATUS sSqlChkRet(sqlite3* sqlHdl, STATUS ret, const char *curOpera);
 
 /***********************************************
  * DECRIPTION:
  *      数据库的关闭操作
  * INPUTS:
- *      数据库文件名 dbFileName
+ *      数据库操作对象 sqlHdl
  * OUTPUTS:
  *      NONE
  * RETURNS:
- *      OK      --  成功
- *      ERROR   --  失败
- *      INVALID_PARAM --  参数错误
- * CAUTIONS:
- *      如果不在当前文件夹下创建数据库，需要提供完整
- *      路径，最好使用绝对路径
-*****************************************************************************/
-STATUS sDbClose(sqlite3 *sqlHdl);
-
-/*****************************************************************************
- * DECRIPTION:
- *      sDbCreateTbl()创建表
- * INPUTS:
- *      char* tblName   --  表名
- *
- * OUTPUTS:
  *      NONE
- * RETURNS:
- *      OK      --  成功
- *      ERROR   --  失败
- *      INVALID_PARAM --  参数错误
  * CAUTIONS:
  *      NONE
 *****************************************************************************/
+void sDbClose(sqlite3 *sqlHdl);
 
 
 /*****************************************************************************

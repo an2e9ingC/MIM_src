@@ -52,40 +52,32 @@ int main()
 {
     sqlite3 *sqlHdl = NULL; //SQL处理对象指针
     STATUS ret = ERROR;
-    char *sql;
-    char *zErrMsg;
+//    char *sql;
+//    char *zErrMsg;
 
     /* 打开数据库 */
-    ret = sDbOpen (DB_FILE, sqlHdl);
-    sSqlChkRet (sqlHdl, ret, "OpenDB");
-
-    sql = "CREATE TABLE test("  \
-          "ID INT PRIMARY KEY     NOT NULL," \
-          "NAME           TEXT    NOT NULL," \
-          "AGE            INT     NOT NULL," \
-          "ADDRESS        CHAR(50)," \
-          "SALARY         REAL );";
-    /* Execute SQL statement */
-    ret = sqlite3_exec(sqlHdl, sql, 0, 0, &zErrMsg);
-    if( ret != SQLITE_OK ){
-        fprintf(stdout, "Table created failed:%s\n", zErrMsg);
+    ret = sqlite3_open (DB_FILE, &sqlHdl);
+    if (SQLITE_OK == ret)
+    {
+        PRINTF("[DB open ok.]");
+    }
+    else
+    {
+        PRINTF("[DB open failed.]");
         EXIT(EXIT_FAILURE);
-    }else{
-        fprintf(stdout, "Table created successfully\n");
     }
 
-
     /* 初始化数据库即相关表 */
-//    ret = sDbInit(sqlHdl);
-//    if (OK == ret)
-//    {
-//        printf("DB:%s Init OK.", DB_FILE);
-//    }
-//    else
-//    {
-//        printf("DB:%s Init ERROR.", DB_FILE);
-//        EXIT(EXIT_FAILURE);
-//    }
+    ret = sDbInit(sqlHdl);
+    if (OK == ret)
+    {
+        PRINTF("DB:%s Init OK.", DB_FILE);
+    }
+    else
+    {
+        PRINTF("DB:%s Init ERROR.", DB_FILE);
+
+    }
 
     /* 关闭数据库 */
     sDbClose (sqlHdl);

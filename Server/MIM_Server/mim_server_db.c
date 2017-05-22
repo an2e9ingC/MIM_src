@@ -12,6 +12,7 @@
  *      2017-05-15 01:27:32 添加 sSqlChkRet 函数，并设置为static模式
  *      2017-05-15 11:23:31 sSqlChkRet 对外提供
  *      2017-05-15 12:21:20 添加数据库（表）的初始化函数
+ *      2017-05-22 11:36:51 删除sDbOpen, 设置sDbClose返回值为void
 *****************************************************************************/
 #include <stdio.h>
 #include <stdlib.h>
@@ -44,18 +45,15 @@ static STATUS sTblUserPasswdInit(sqlite3* sqlHdl)
                 "UNAME  TEXT    KEY             NOT NULL,\n"\
                 "UPASSWD    TEXT                NOT NULL\n"\
                 ");";
-    PRINTF("%s", sql);
-    ret = sqlite3_exec (sqlHdl, sql, 0, 0, 0);
-    sSqlChkRet (sqlHdl, ret, "Init UserPasswd Tbl");
 
-    if (SQLITE_OK == ret)
-    {
-        return OK;
-    }
-    else
-    {
-        return ERROR;
-    }
+    ret = sqlite3_exec (sqlHdl, sql, 0, 0, 0);
+
+#ifdef _DEBUG
+    PRINTF("%s", sql);
+    sSqlChkRet (sqlHdl, ret, __FUNCTION__);
+#endif
+
+    return ((SQLITE_OK == ret) ? OK : ERROR);
 }
 
 /*****************************************************************************
@@ -82,16 +80,13 @@ static STATUS sTblUserInfoInit(sqlite3* sqlHdl)
                 "TEL    TEXT    \n"
                 ");";
     ret = sqlite3_exec (sqlHdl, sql, 0, 0, 0);
-    sSqlChkRet (sqlHdl, ret, "Init UserInfo Tbl");
 
-    if (SQLITE_OK == ret)
-    {
-        return OK;
-    }
-    else
-    {
-        return ERROR;
-    }
+#ifdef _DEBUG
+    PRINTF("%s", sql);
+    sSqlChkRet (sqlHdl, ret, __FUNCTION__);
+#endif
+
+    return ((SQLITE_OK == ret) ? OK : ERROR);
 }
 
 /*****************************************************************************
@@ -116,17 +111,15 @@ static STATUS sTblUserFrdsInit(sqlite3* sqlHdl)
                 "FID    INT                     NOT NULL,\n"
                 "REMARK  TEXT   \n"
                 ");";
-    ret = sqlite3_exec (sqlHdl, sql, 0, 0, 0);
-    sSqlChkRet (sqlHdl, ret, "Init UserFrds Tbl");
 
-    if (SQLITE_OK == ret)
-    {
-        return OK;
-    }
-    else
-    {
-        return ERROR;
-    }
+    ret = sqlite3_exec (sqlHdl, sql, 0, 0, 0);
+
+#ifdef _DEBUG
+    PRINTF("%s", sql);
+    sSqlChkRet (sqlHdl, ret, __FUNCTION__);
+#endif
+
+    return ((SQLITE_OK == ret) ? OK : ERROR);
 }
 
 /*****************************************************************************
@@ -150,17 +143,15 @@ static STATUS sTblUserStatInit(sqlite3* sqlHdl)
                 "UID    INT     PRIMARY KEY     NOT NULL,\n"
                 "STAT   TEXT                    NOT NULL,\n"
                 ");";
-    ret = sqlite3_exec (sqlHdl, sql, 0, 0, 0);
-    sSqlChkRet (sqlHdl, ret, "Init UserStat Tbl");
 
-    if (SQLITE_OK == ret)
-    {
-        return OK;
-    }
-    else
-    {
-        return ERROR;
-    }
+    ret = sqlite3_exec (sqlHdl, sql, 0, 0, 0);
+
+#ifdef _DEBUG
+    PRINTF("%s", sql);
+    sSqlChkRet (sqlHdl, ret, __FUNCTION__);
+#endif
+
+    return ((SQLITE_OK == ret) ? OK : ERROR);
 }
 
 /*****************************************************************************
@@ -186,17 +177,15 @@ static STATUS sTblUserVerifyInit(sqlite3* sqlHdl)
                 "Q2     TEXT                    NOT NULL,\n"
                 "Q3     TEXT                    NOT NULL,\n"
                 ");";
-    ret = sqlite3_exec (sqlHdl, sql, 0, 0, 0);
-    sSqlChkRet (sqlHdl, ret, "Init UserVerify Tbl");
 
-    if (SQLITE_OK == ret)
-    {
-        return OK;
-    }
-    else
-    {
-        return ERROR;
-    }
+    ret = sqlite3_exec (sqlHdl, sql, 0, 0, 0);
+
+#ifdef _DEBUG
+    PRINTF("%s", sql);
+    sSqlChkRet (sqlHdl, ret, __FUNCTION__);
+#endif
+
+    return ((SQLITE_OK == ret) ? OK : ERROR);
 }
 
 
@@ -213,9 +202,11 @@ static STATUS sTblUserVerifyInit(sqlite3* sqlHdl)
  *      OK (0)       //处理成功
  *      ERROR (-1)    //处理失败
  * CAUTIONS:
+ *      本函数一般用于DEBUG模式的输出
 *****************************************************************************/
-STATUS sSqlChkRet(sqlite3* sqlHdl, STATUS ret, char* curOpera)
+STATUS sSqlChkRet(sqlite3* sqlHdl, STATUS ret, const char* curOpera)
 {
+    PRINTF("%s:  %s:", __FILE__, __FUNCTION__);
     STATUS stat = ERROR;
     /* 如果返回值不是OK,则输出返回值和警告信息 */
     if (ret != SQLITE_OK)
@@ -249,49 +240,34 @@ STATUS sSqlChkRet(sqlite3* sqlHdl, STATUS ret, char* curOpera)
 
 /*****************************************************************************
  * DECRIPTION:
- *      数据库的创建或打开操作,将打开的数据库操作对象输出到sqlHdl
- * INPUTS:
- *      数据库文件名 dbFileName
- * OUTPUTS:
- *      打开的数据库操作对象 sqlite3 *sqlHdl
- * RETURNS:
- *      NONE
- * CAUTIONS:
- *      如果不在当前文件夹下创建数据库，需要提供完整
- *      路径，最好使用绝对路径
-*****************************************************************************/
-STATUS sDbOpen(const char *dbFileName, sqlite3 *sqlHdl)
-{
-    STATUS ret = SQLITE_ERROR;
-
-    ret = sqlite3_open (dbFileName, &sqlHdl);
-
-    return ret;
-}
-
-/*****************************************************************************
- * DECRIPTION:
  *      数据库的关闭操作
  * INPUTS:
  *      数据库操作对象 sqlite3* sqlHdl
  * OUTPUTS:
  *      NONE
  * RETURNS:
- *      OK      --  成功
- *      ERROR   --  失败
- *      INVALID_PARAM --  参数错误
+ *      NONE
  * CAUTIONS:
- *      如果不在当前文件夹下创建数据库，需要提供完整
- *      路径，最好使用绝对路径
+ *      NONE
 *****************************************************************************/
-STATUS sDbClose(sqlite3 *sqlHdl)
+void sDbClose(sqlite3 *sqlHdl)
 {
-    STATUS ret = ERROR;
-
     ret = sqlite3_close(sqlHdl);
-    sSqlChkRet (sqlHdl, ret, "Close DB");
-    PRINTF ("\n");
-    return ret;
+    if (SQLITE_OK == ret)
+    {
+        PRINTF("[DB Closed OK.]");
+        return ;
+    }
+    else
+    {
+        PRINTF("[DB Closed Failed]");
+        PRINTF ("\n");
+
+#ifdef _DEBUG
+    sSqlChkRet (sqlHdl, ret, __FUNCTION__);
+#endif
+        EXIT(EXIT_FAILURE);
+    }
 }
 
 /*****************************************************************************
@@ -311,6 +287,13 @@ STATUS sDbClose(sqlite3 *sqlHdl)
 STATUS sDbInit(sqlite3* sqlHdl)
 {
     STATUS ret = ERROR;
+
+    /*入参检查*/
+    if (NULL == sqlHdl)
+    {
+        PRINTF("sDbInit sqlHdl is NULL.");
+        goto o_exit;
+    }
 
     /* 初始化 用户名密码表 */
     ret = sTblUserPasswdInit(sqlHdl);
@@ -346,6 +329,11 @@ STATUS sDbInit(sqlite3* sqlHdl)
     {
         goto o_exit;
     }
+    else
+    {
+        PRINTF("%s: DB INIT OK.",__FUNCTION__);
+    }
+
 o_exit:
     return ret;
 }
