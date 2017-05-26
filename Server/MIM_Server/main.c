@@ -83,6 +83,9 @@ int main()
     free(reg);
 
     sDbInsertData2InfoTbl(sqlHdl, uid, "male", "xuchuaner@qq.com", "1810101");
+    sDbInsertData2FrdsTbl(sqlHdl, uid, 111, "ftest1");
+    sDbInsertData2StatTbl(sqlHdl, uid, ON_LINE);
+    sDbInsertData2VerifyTbl(sqlHdl, uid, "yanzheng1", "yanzheng2", "yanzheng3");
 
     T_UPASSWD passwd = (T_UPASSWD)malloc (UPASSWD_LEN);
 

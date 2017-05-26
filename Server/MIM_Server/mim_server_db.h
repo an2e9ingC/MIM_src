@@ -195,6 +195,111 @@ STATUS sDbInsertData2VerifyTbl
         T_UVERIFIES q3
 );
 
+
+/*****************************************************************************
+ * DECRIPTION:
+ *      sDbDelDataFromPasswdTbl() 从数据库的USER_PASSWD_TBL表中删除数据
+ * INPUTS:
+ *      sqlite3* sqlHdl
+ *      uid     由系统生成的uid,
+ * OUTPUTS:
+ *      NONE
+ * RETURNS:
+ *      OK      --  成功
+ *      ERROR   --  失败
+ *      INVALID_PARAM --  参数错误
+ * CAUTIONS:
+ *      NONE
+*****************************************************************************/
+STATUS sDbDelDataFromPasswdTbl
+(
+        sqlite3 *sqlHdl,
+        T_UID uid,
+);
+
+/*****************************************************************************
+ * DECRIPTION:
+ *      sDbDelDataFromInfoTbl() 从数据库的 USER_INFO_TBL 表中删除数据
+ * INPUTS:
+ *      sqlite3* sqlHdl
+ *      uid
+ * OUTPUTS:
+ *      NONE
+ * RETURNS:
+ *      OK      --  成功
+ *      ERROR   --  失败
+ *      INVALID_PARAM --  参数错误
+ * CAUTIONS:
+ *      NONE
+*****************************************************************************/
+STATUS sDbDelDataFromInfoTbl
+(
+    sqlite3 *sqlHdl,
+    T_UID uid
+);
+
+/*****************************************************************************
+ * DECRIPTION:
+ *      sDbDelDataFromFrdsTbl() 从数据库的 USER_FRDS_TBL 表中删除数据
+ * INPUTS:
+ *      sqlite3* sqlHdl
+ *      uid
+ *      fid      好友id
+ *      fRmk    好友备注
+ * OUTPUTS:
+ *      NONE
+ * RETURNS:
+ *      OK      --  成功
+ *      ERROR   --  失败
+ *      INVALID_PARAM --  参数错误
+ * CAUTIONS:
+ *      NONE
+*****************************************************************************/
+STATUS sDbDelDataFromFrdsTbl
+(
+    sqlite3 *sqlHdl,
+    T_UID uid,
+);
+
+/*****************************************************************************
+ * DECRIPTION:
+ *      sDbDelData2StatTbl() 从数据库的 USER_STAT_TBL 表中删除数据
+ * INPUTS:
+ *      sqlite3* sqlHdl
+ *      uId
+ *      uStat     用户在线状态
+ * OUTPUTS:
+ *      NONE
+ * RETURNS:
+ *      OK      --  成功
+ *      ERROR   --  失败
+ *      INVALID_PARAM --  参数错误
+ * CAUTIONS:
+ *      NONE
+*****************************************************************************/
+STATUS sDbDelData2StatTbl(sqlite3 *sqlHdl, T_UID uid);
+
+/*****************************************************************************
+ * DECRIPTION:
+ *      sDbDeltDataFromVerifyTbl() 向数据库的 USER_VERIFY_TBL 表中添加数据
+ * INPUTS:
+ *      sqlite3* sqlHdl
+ *      uid
+ * OUTPUTS:
+ *      NONE
+ * RETURNS:
+ *      OK      --  成功
+ *      ERROR   --  失败
+ *      INVALID_PARAM --  参数错误
+ * CAUTIONS:
+ *      NONE
+*****************************************************************************/
+STATUS sDbDeltDataFromVerifyTbl
+(
+        sqlite3 *sqlHdl,
+        T_UID uid
+);
+
 /*****************************************************************************
  * DECRIPTION:
  *      sDbSelectConditionFromTbl 从表中select出符合条件的表项，存到指针void* reslt中

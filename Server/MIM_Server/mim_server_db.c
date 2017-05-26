@@ -177,7 +177,7 @@ static int sDbShowTbl(void *execParam, int colNum, char **colVal, char **colName
         printf("%s = %s\n", colName[i], colVal[i] ? colVal[i] : "NULL");
         printf("%s\n", colVal[i] ? colVal[i] : "NULL");
     }
-    PRINTF("\n");
+
     return 0;
 }
 
@@ -201,10 +201,10 @@ static int sDbSave2Reslt(void *reslt, int colNum, char **colVal, char **colName)
     }
 #ifdef   _DEBUG
     PRINTF("__%s__:", __FUNCTION__);
-    PRINTF("sizeof(?:) = %lu.\n"
+    PRINTF(" colName = %s.\n"
            "strlen() = %lu.\n"
            "reslt = %s.",
-           sizeof(tmp),
+           colName[0],
            strlen(tmp),
            (char*)reslt);
 #endif
@@ -300,7 +300,7 @@ void sDbClose(sqlite3 *sqlHdl)
  * INPUTS:
  *      sqlite3* sqlHdl;    数据库操作对象
 *****************************************************************************/
-STATUS sDbInit(sqlite3 *slqHdl)
+STATUS sDbInit(sqlite3 *sqlHdl)
 {
     STATUS ret = ERROR;
 
@@ -391,11 +391,11 @@ STATUS sDbInsertData2PasswdTbl(sqlite3* sqlHdl, T_UID uid, T_UNAME name, T_UPASS
     strncat(sql, tmp, strlen(tmp)); //填充sql语句的 UPASSWD 部分
 
     //执行SQL语句
+    ret = sqlite3_exec (sqlHdl, sql,  NULL, NULL, NULL);
 #ifdef _DEBUG
+    sSqlChkRet (sqlHdl, ret, __FUNCTION__);
     PRINTF("%s", sql);
 #endif
-    ret = sqlite3_exec (sqlHdl, sql,  NULL, NULL, NULL);
-    sSqlChkRet (sqlHdl, ret, __FUNCTION__);
 
     return ret;
 }
@@ -468,7 +468,40 @@ STATUS sDbInsertData2InfoTbl
 *****************************************************************************/
 STATUS sDbInsertData2FrdsTbl(sqlite3 *sqlHdl, T_UID uid, T_UID fid, T_FRD_REMARK fRmk)
 {
+    STATUS ret = ERROR;
 
+    /* 入参检查 */
+    if (ISNULL(sqlHdl))
+    {
+#ifdef _DEBUG
+        PRINTFILE;
+#endif
+        PRINTF("[%s: sqlHdl is NULL.]", __FUNCTION__);
+        return INVALID_PARAM;
+    }
+
+    //构造SQL语句
+    char sql[SQL_LEN] = "INSERT INTO USER_FRDS_TBL VALUES (";  //SQL语句
+    char tmp[50] = {'\0'};
+
+    sprintf(tmp, "  %d,", uid);
+    strncat(sql, tmp, strlen(tmp)); //填充sql语句的 UID 部分
+
+    sprintf(tmp, "  %d,", fid);
+    strncat(sql, tmp, strlen(tmp)); //填充sql语句的 FID 部分
+
+    sprintf(tmp, "  '%s');", fRmk);
+    strncat(sql, tmp, strlen(tmp)); //填充sql语句的 REMARK 部分
+
+    //执行SQL语句
+    ret = sqlite3_exec (sqlHdl, sql,  NULL, NULL, NULL);
+
+#ifdef _DEBUG
+    PRINTF("%s", sql);
+    sSqlChkRet (sqlHdl, ret, __FUNCTION__);
+#endif
+
+    return ret;
 }
 
 /*****************************************************************************
@@ -481,7 +514,37 @@ STATUS sDbInsertData2FrdsTbl(sqlite3 *sqlHdl, T_UID uid, T_UID fid, T_FRD_REMARK
 *****************************************************************************/
 STATUS sDbInsertData2StatTbl(sqlite3 *sqlHdl, T_UID uid, T_USTAT uStat)
 {
+    STATUS ret = ERROR;
 
+    /* 入参检查 */
+    if (ISNULL(sqlHdl))
+    {
+#ifdef _DEBUG
+        PRINTFILE;
+#endif
+        PRINTF("[%s: sqlHdl is NULL.]", __FUNCTION__);
+        return INVALID_PARAM;
+    }
+
+    //构造SQL语句
+    char sql[SQL_LEN] = "INSERT INTO USER_STAT_TBL VALUES (";  //SQL语句
+    char tmp[50] = {'\0'};
+
+    sprintf(tmp, "  %d,", uid);
+    strncat(sql, tmp, strlen(tmp)); //填充sql语句的 UID 部分
+
+    sprintf(tmp, "  %d);", uStat);
+    strncat(sql, tmp, strlen(tmp)); //填充sql语句的 STAT 部分
+
+    //执行SQL语句
+    ret = sqlite3_exec (sqlHdl, sql,  NULL, NULL, NULL);
+
+#ifdef _DEBUG
+    PRINTF("%s", sql);
+    sSqlChkRet (sqlHdl, ret, __FUNCTION__);
+#endif
+
+    return ret;
 }
 
 /*****************************************************************************
@@ -502,7 +565,131 @@ STATUS sDbInsertData2VerifyTbl
         T_UVERIFIES q3
 )
 {
+    STATUS ret = ERROR;
 
+    /* 入参检查 */
+    if (ISNULL(sqlHdl))
+    {
+#ifdef _DEBUG
+        PRINTFILE;
+#endif
+        PRINTF("[%s: sqlHdl is NULL.]", __FUNCTION__);
+        return INVALID_PARAM;
+    }
+
+    //构造SQL语句
+    char sql[SQL_LEN] = "INSERT INTO USER_VERIFY_TBL VALUES (";  //SQL语句
+    char tmp[50] = {'\0'};
+
+    sprintf(tmp, "  %d,", uid);
+    strncat(sql, tmp, strlen(tmp)); //填充sql语句的 UID 部分
+
+    sprintf(tmp, "  '%s',", q1);
+    strncat(sql, tmp, strlen(tmp)); //填充sql语句的 Q1 部分
+
+    sprintf(tmp, "  '%s',", q2);
+    strncat(sql, tmp, strlen(tmp)); //填充sql语句的 Q2 部分
+
+    sprintf(tmp, "  '%s');", q3);
+    strncat(sql, tmp, strlen(tmp)); //填充sql语句的 Q3 部分
+
+    //执行SQL语句
+    ret = sqlite3_exec (sqlHdl, sql,  NULL, NULL, NULL);
+
+#ifdef _DEBUG
+    PRINTF("%s", sql);
+    sSqlChkRet (sqlHdl, ret, __FUNCTION__);
+#endif
+
+    return ret;
+}
+
+/*****************************************************************************
+ * DECRIPTION:
+ *      sDbDelDataFromPasswdTbl() 从数据库的USER_PASSWD_TBL表中删除数据
+ * INPUTS:
+ *      sqlite3* sqlHdl
+ *      uid     由系统生成的uid,
+*****************************************************************************/
+STATUS sDbDelDataFromPasswdTbl
+(
+        sqlite3 *sqlHdl,
+        T_UID uid,
+)
+{
+    STATUS ret = ERROR;
+
+    return ret;
+}
+
+/*****************************************************************************
+ * DECRIPTION:
+ *      sDbDelDataFromInfoTbl() 从数据库的 USER_INFO_TBL 表中删除数据
+ * INPUTS:
+ *      sqlite3* sqlHdl
+ *      uid
+*****************************************************************************/
+STATUS sDbDelDataFromInfoTbl
+(
+    sqlite3 *sqlHdl,
+    T_UID uid
+)
+{
+    STATUS ret = ERROR;
+
+    return ret;
+}
+
+/*****************************************************************************
+ * DECRIPTION:
+ *      sDbDelDataFromFrdsTbl() 从数据库的 USER_FRDS_TBL 表中删除数据
+ * INPUTS:
+ *      sqlite3* sqlHdl
+ *      uid
+*****************************************************************************/
+STATUS sDbDelDataFromFrdsTbl
+(
+    sqlite3 *sqlHdl,
+    T_UID uid,
+)
+{
+
+    STATUS ret = ERROR;
+
+    return ret;
+}
+
+/*****************************************************************************
+ * DECRIPTION:
+ *      sDbDelData2StatTbl() 从数据库的 USER_STAT_TBL 表中删除数据
+ * INPUTS:
+ *      sqlite3* sqlHdl
+ *      uId
+ *      uStat     用户在线状态
+*****************************************************************************/
+STATUS sDbDelData2StatTbl(sqlite3 *sqlHdl, T_UID uid)
+{
+    STATUS ret = ERROR;
+
+    return ret;
+}
+
+/*****************************************************************************
+ * DECRIPTION:
+ *      sDbDeltDataFromVerifyTbl() 向数据库的 USER_VERIFY_TBL 表中添加数据
+ * INPUTS:
+ *      sqlite3* sqlHdl
+ *      uid
+*****************************************************************************/
+STATUS sDbDeltDataFromVerifyTbl
+(
+        sqlite3 *sqlHdl,
+        T_UID uid
+)
+{
+    STATUS ret = ERROR;
+
+    return ret;
 }
 
 
