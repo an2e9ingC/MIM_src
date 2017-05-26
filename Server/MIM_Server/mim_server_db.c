@@ -160,6 +160,57 @@ static STATUS sTblUserVerifyInit(sqlite3* sqlHdl)
     return ((SQLITE_OK == ret) ? OK : ERROR);
 }
 
+/*****************************************************************************
+ * DECRIPTION:
+ *      回调函数，打印表信息(主要是用户调试模式)
+ * INPUTS:
+ *      void *execParam --    由 sqlite3_exec 的第四个参数提供
+ *      int  colNum      --    每一行的列数
+ *      char **colVal   --    表示行中字段值的字符串数组
+ *      char **colName -- 表示列名称的字符串数组
+*******************************************************************************/
+static int sDbShowTbl(void *execParam, int colNum, char **colVal, char **colName)
+{
+    int i;
+    PRINTF("%s", (char*)execParam);
+    for(i=0; i<colNum; i++){
+        printf("%s = %s\n", colName[i], colVal[i] ? colVal[i] : "NULL");
+        printf("%s\n", colVal[i] ? colVal[i] : "NULL");
+    }
+    PRINTF("\n");
+    return 0;
+}
+
+/*****************************************************************************
+ * DECRIPTION:
+ *      回调函数，将查询的内容保存到入参 void* reslt
+ * INPUTS:
+ *      void *reslt     --  用于保存查询到的数据
+ *      int  colNum     --  每一行的列数
+ *      char **colVal   --  表示行中字段值的字符串数组
+ *      char **colName  --  表示列名称的字符串数组
+*******************************************************************************/
+static int sDbSave2Reslt(void *reslt, int colNum, char **colVal, char **colName)
+{
+    int i;
+    char * tmp = NULL;
+
+    for(i=0; i<colNum; i++){
+        tmp = colVal[i] ? colVal[i] : "NULL";
+        memcpy (reslt, tmp, strlen(tmp));
+    }
+#ifdef   _DEBUG
+    PRINTF("__%s__:", __FUNCTION__);
+    PRINTF("sizeof(?:) = %lu.\n"
+           "strlen() = %lu.\n"
+           "reslt = %s.",
+           sizeof(tmp),
+           strlen(tmp),
+           (char*)reslt);
+#endif
+    return 0;
+}
+
 
 /*****************************************************************************
  * DECRIPTION:
@@ -210,25 +261,6 @@ STATUS sSqlChkRet(sqlite3* sqlHdl, STATUS ret, const char* curOpera)
     return stat;
 }
 
-/*****************************************************************************
- * DECRIPTION:
- *      回调函数，打印表信息
- * INPUTS:
- *      void *execParam --    由 sqlite3_exec 的第四个参数提供
- *      int  colNum      --    每一行的列数
- *      char **colVal   --    表示行中字段值的字符串数组
- *      char **colName -- 表示列名称的字符串数组
-*******************************************************************************/
-int sDbShowTbl(void *execParam, int colNum, char **colVal, char **colName)
-{
-    int i;
-    PRINTF("%s\n", (char*)execParam);
-    for(i=0; i<colNum; i++){
-        printf("%s = %s\n", colName[i], colVal[i] ? colVal[i] : "NULL");
-    }
-    printf("\n");
-    return 0;
-}
 
 /*****************************************************************************
  * DECRIPTION:
@@ -268,7 +300,7 @@ void sDbClose(sqlite3 *sqlHdl)
  * INPUTS:
  *      sqlite3* sqlHdl;    数据库操作对象
 *****************************************************************************/
-STATUS sDbInit(sqlite3* sqlHdl)
+STATUS sDbInit(sqlite3 *slqHdl)
 {
     STATUS ret = ERROR;
 
@@ -326,12 +358,12 @@ o_exit:
  * DECRIPTION:
  *      sDbInsertData2PasswdTbl() 向数据库的USER_PASSWD_TBL表中添加数据(注册新用户)
  * INPUTS:
- *      sqlHdl    数据库操作对象
- *      uId       由系统生成的uid,
- *      uName     用户名
- *      uPasswd   用户密码
+ *      (使用全局通用的sqlHdl)
+ *      uid     由系统生成的uid,
+ *      name    用户名
+ *      passwd  用户密码
 *****************************************************************************/
-STATUS sDbInsertData2PasswdTbl(sqlite3* sqlHdl, T_UID uId, T_UNAME uName, T_UPASSWD uPasswd)
+STATUS sDbInsertData2PasswdTbl(sqlite3* sqlHdl, T_UID uid, T_UNAME name, T_UPASSWD passwd)
 {
     STATUS ret = ERROR;
 
@@ -349,14 +381,14 @@ STATUS sDbInsertData2PasswdTbl(sqlite3* sqlHdl, T_UID uId, T_UNAME uName, T_UPAS
     char sql[SQL_LEN] = "INSERT INTO USER_PASSWD_TBL VALUES (";  //SQL语句
     char tmp[50] = {'\0'};   //临时拥有提取请求命令crReg中相关信息
 
-    sprintf(tmp, "  %d,", uId);
-    strncat(sql, tmp, strlen(tmp)); //填充sql语句的uid部分
+    sprintf(tmp, "  %d,", uid);
+    strncat(sql, tmp, strlen(tmp)); //填充sql语句的 UID 部分
 
-    sprintf(tmp, "  '%s',", uName);
-    strncat(sql, tmp, strlen(tmp)); //填充sql语句的用户名部分
+    sprintf(tmp, "  '%s',", name);
+    strncat(sql, tmp, strlen(tmp)); //填充sql语句的 UNAME 部分
 
-    sprintf(tmp, "  '%s');", uPasswd);
-    strncat(sql, tmp, strlen(tmp)); //填充sql语句的upasswd部分
+    sprintf(tmp, "  '%s');", passwd);
+    strncat(sql, tmp, strlen(tmp)); //填充sql语句的 UPASSWD 部分
 
     //执行SQL语句
 #ifdef _DEBUG
@@ -370,17 +402,23 @@ STATUS sDbInsertData2PasswdTbl(sqlite3* sqlHdl, T_UID uId, T_UNAME uName, T_UPAS
 
 /*****************************************************************************
  * DECRIPTION:
- *      sDbSelectConditionFromTbl 从表中select出符合条件的表项
+ *      sDbInsertData2InfoTbl() 向数据库的 USER_INFO_TBL 表中添加数据
  * INPUTS:
- *      sqlite3* sqlHdl 操作数据库对象
- *      char* condition 选择条件
- *      char* tblName   表名
+ *      sqlite3* sqlHdl
+ *      uid
+ *      sex      性别
+ *      mail,    邮箱
+ *      tel      电话
 *****************************************************************************/
-STATUS sDbSelectConditionFromTbl(sqlite3 *sqlHdl, char *condition, char* tblName)
+STATUS sDbInsertData2InfoTbl
+(
+        sqlite3 *sqlHdl,
+        T_UID uid,
+        T_USEX sex,
+        T_UMAIL mail,
+        T_UTEL tel)
 {
     STATUS ret = ERROR;
-    char sql[SQL_LEN] = "SELECT ";
-    char tmp[50] = {"\0"};
 
     /* 入参检查 */
     if (ISNULL(sqlHdl))
@@ -389,29 +427,109 @@ STATUS sDbSelectConditionFromTbl(sqlite3 *sqlHdl, char *condition, char* tblName
         PRINTFILE;
 #endif
         PRINTF("[%s: sqlHdl is NULL.]", __FUNCTION__);
-        return ret;
+        return INVALID_PARAM;
     }
 
-    PRINTF("condition:%s", condition);
-    PRINTF("tblName:%s", tblName);
+    //构造SQL语句
+    char sql[SQL_LEN] = "INSERT INTO USER_INFO_TBL VALUES (";  //SQL语句
+    char tmp[50] = {'\0'};
 
-    /* 构造SQL语句 */
-    sprintf(tmp, "%s", condition);
-    strncat(sql, tmp, strlen(tmp));
+    sprintf(tmp, "  %d,", uid);
+    strncat(sql, tmp, strlen(tmp)); //填充sql语句的 UID 部分
 
-    sprintf(tmp, "%s", " FROM ");
-    strncat(sql, tmp, strlen(tmp));
+    sprintf(tmp, "  '%s',", sex);
+    strncat(sql, tmp, strlen(tmp)); //填充sql语句的 SEX 部分
 
-    sprintf(tmp, "%s", tblName);
-    strncat(sql, tmp, strlen(tmp));
+    sprintf(tmp, "  '%s',", mail);
+    strncat(sql, tmp, strlen(tmp)); //填充sql语句的 EMAIL 部分
+
+    sprintf(tmp, "  '%s');", tel);
+    strncat(sql, tmp, strlen(tmp)); //填充sql语句的 TEL 部分
+
+    //执行SQL语句
+    ret = sqlite3_exec (sqlHdl, sql,  NULL, NULL, NULL);
+
+#ifdef _DEBUG
+    PRINTF("%s", sql);
+    sSqlChkRet (sqlHdl, ret, __FUNCTION__);
+#endif
+
+    return ret;
+}
+
+/*****************************************************************************
+ * DECRIPTION:
+ *      sDbInsertData2FrdsTbl() 向数据库的 USER_FRDS_TBL 表中添加数据
+ * INPUTS:
+ *      sqlite3* sqlHdl
+ *      uid
+ *      fid      好友id
+ *      fRmk    好友备注
+*****************************************************************************/
+STATUS sDbInsertData2FrdsTbl(sqlite3 *sqlHdl, T_UID uid, T_UID fid, T_FRD_REMARK fRmk)
+{
+
+}
+
+/*****************************************************************************
+ * DECRIPTION:
+ *      sDbInsertData2StatTbl() 向数据库的 USER_STAT_TBL 表中添加数据
+ * INPUTS:
+ *      sqlite3* sqlHdl
+ *      T_UID uId
+ *      T_USTAT     用户在线状态
+*****************************************************************************/
+STATUS sDbInsertData2StatTbl(sqlite3 *sqlHdl, T_UID uid, T_USTAT uStat)
+{
+
+}
+
+/*****************************************************************************
+ * DECRIPTION:
+ *      sDbInsertData2VerifyTbl() 向数据库的 USER_VERIFY_TBL 表中添加数据
+ * INPUTS:
+ *      sqlite3* sqlHdl
+ *      T_UID
+ *      T_UVERIFIES     验证问题（3个）
+ *      T_UVERIFIES
+ *      T_UVERIFIES
+*****************************************************************************/
+STATUS sDbInsertData2VerifyTbl
+(sqlite3 *sqlHdl,
+        T_UID uid,
+        T_UVERIFIES q1,
+        T_UVERIFIES q2,
+        T_UVERIFIES q3
+)
+{
+
+}
+
+
+/*****************************************************************************
+ * DECRIPTION:
+ *      sDbSelectConditionFromTbl 从表中select出符合条件的表项
+ * INPUTS:
+ *      sqlite3* sqlHdl 操作数据库对象
+ *      char* condition 选择条件(需要是完整的SQL语句)
+ *      void* reslt     存放查询的结果
+*****************************************************************************/
+STATUS sDbSelectConditionFromTbl(sqlite3 *sqlHdl, char *condition, void *reslt)
+{
+    STATUS ret = ERROR;
+
+    /* 入参检查 */
+    if (ISNULL(sqlHdl))
+    {
+#ifdef _DEBUG
+        PRINTFILE;
+        PRINTF("[%s: sqlHdl is NULL.]", __FUNCTION__);
+#endif
+        return INVALID_PARAM;
+    }
 
     /* 执行SQL语句 */
-#ifdef _DEBUG
-    PRINTF("__%s__SQL:%s", __FUNCTION__, sql);
-    ret = sqlite3_exec(sqlHdl, sql, sDbShowTbl, (void*)__FUNCTION__, NULL);
-#else
-    ret = sqlite3_exec(sqlHdl, sql, NULL, NULL, NULL);
-#endif
+    ret = sqlite3_exec(sqlHdl, condition, sDbSave2Reslt, reslt, NULL);
 
     ret = sSqlChkRet (sqlHdl, ret, (const char*)__FUNCTION__);
 

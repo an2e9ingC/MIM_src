@@ -25,22 +25,7 @@
 
 #define SQL_LEN 200 //定义SQL语句长度
 
-/*****************************************************************************
- * DECRIPTION:
- *      回调函数，打印表信息
- * INPUTS:
- *      void *execParam --    由 sqlite3_exec 的第四个参数提供
- *      int  colNum      --    每一行的列数
- *      char **colVal   --    表示行中字段值的字符串数组
- *      char **colName -- 表示列名称的字符串数组
- * OUTPUTS:
- *      NONE
- * RETURNS:
- *      返回执行结果
- * CAUTIONS:
- *      NONE
-*******************************************************************************/
-int sDbShowTbl(void *execParam, int colNum, char **colVal, char **colName);
+extern sqlite3 *sqlHdl;
 
 /*****************************************************************************
  * DECRIPTION:
@@ -57,7 +42,7 @@ int sDbShowTbl(void *execParam, int colNum, char **colVal, char **colName);
  * CAUTIONS:
  *      本函数用于DEBUG模式输出
 *****************************************************************************/
-STATUS sSqlChkRet(sqlite3* sqlHdl, STATUS ret, const char *curOpera);
+STATUS sSqlChkRet(sqlite3 *sqlHdl, STATUS ret, const char *curOpera);
 
 /***********************************************
  * DECRIPTION:
@@ -71,14 +56,14 @@ STATUS sSqlChkRet(sqlite3* sqlHdl, STATUS ret, const char *curOpera);
  * CAUTIONS:
  *      NONE
 *****************************************************************************/
-void sDbClose(sqlite3 *sqlHdl);
+void sDbClose(sqlite3* sqlHdl);
 
 
 /*****************************************************************************
  * DECRIPTION:
  *      sDbInit()   初始化数据库：初始化所有表
  * INPUTS:
- *      sqlite3* sqlHdl; 数据库对象
+ *      sqlite3 *slqHdl
  * OUTPUTS:
  *      NONE
  * RETURNS:
@@ -88,16 +73,16 @@ void sDbClose(sqlite3 *sqlHdl);
  * CAUTIONS:
  *      NONE
 *****************************************************************************/
-STATUS sDbInit(sqlite3* sqlHdl);
+STATUS sDbInit(sqlite3 *slqHdl);
 
 /*****************************************************************************
  * DECRIPTION:
  *      sDbInsertData2PasswdTbl() 向数据库的USER_PASSWD_TBL表中添加数据
  * INPUTS:
- *      sqlite3*    数据库操作对象
- *      T_UID uId   由系统生成的uid,
- *      T_UNAME     用户名
- *      T_UPASSWD   用户密码
+ *      sqlite3* sqlHdl
+ *      uid     由系统生成的uid,
+ *      name    用户名
+ *      passwd  用户密码
  * OUTPUTS:
  *      NONE
  * RETURNS:
@@ -107,15 +92,23 @@ STATUS sDbInit(sqlite3* sqlHdl);
  * CAUTIONS:
  *      NONE
 *****************************************************************************/
-STATUS sDbInsertData2PasswdTbl(sqlite3*, T_UID, T_UNAME, T_UPASSWD);
+STATUS sDbInsertData2PasswdTbl
+(
+        sqlite3 *sqlHdl,
+        T_UID uid,
+        T_UNAME name,
+        T_UPASSWD passwd
+);
 
 /*****************************************************************************
  * DECRIPTION:
- *      sDbSelectConditionFromTbl 从表中select出符合条件的表项
+ *      sDbInsertData2InfoTbl() 向数据库的 USER_INFO_TBL 表中添加数据
  * INPUTS:
- *      sqlite3* sqlHdl 操作数据库对象
- *      char* condition 选择条件
- *      char* tblName   表名
+ *      sqlite3* sqlHdl
+ *      uid
+ *      sex      性别
+ *      mail,    邮箱
+ *      tel      电话
  * OUTPUTS:
  *      NONE
  * RETURNS:
@@ -125,6 +118,100 @@ STATUS sDbInsertData2PasswdTbl(sqlite3*, T_UID, T_UNAME, T_UPASSWD);
  * CAUTIONS:
  *      NONE
 *****************************************************************************/
-STATUS sDbSelectConditionFromTbl(sqlite3* sqlHdl, char* condition, char *tblName);
+STATUS sDbInsertData2InfoTbl
+(
+    sqlite3 *sqlHdl,
+    T_UID uid,
+    T_USEX sex,
+    T_UMAIL mail,
+    T_UTEL tel
+);
+
+/*****************************************************************************
+ * DECRIPTION:
+ *      sDbInsertData2FrdsTbl() 向数据库的 USER_FRDS_TBL 表中添加数据
+ * INPUTS:
+ *      sqlite3* sqlHdl
+ *      uid
+ *      fid      好友id
+ *      fRmk    好友备注
+ * OUTPUTS:
+ *      NONE
+ * RETURNS:
+ *      OK      --  成功
+ *      ERROR   --  失败
+ *      INVALID_PARAM --  参数错误
+ * CAUTIONS:
+ *      NONE
+*****************************************************************************/
+STATUS sDbInsertData2FrdsTbl
+(
+    sqlite3 *sqlHdl,
+    T_UID uid,
+    T_UID fid,
+    T_FRD_REMARK fRmk
+);
+
+/*****************************************************************************
+ * DECRIPTION:
+ *      sDbInsertData2StatTbl() 向数据库的 USER_STAT_TBL 表中添加数据
+ * INPUTS:
+ *      sqlite3* sqlHdl
+ *      uId
+ *      uStat     用户在线状态
+ * OUTPUTS:
+ *      NONE
+ * RETURNS:
+ *      OK      --  成功
+ *      ERROR   --  失败
+ *      INVALID_PARAM --  参数错误
+ * CAUTIONS:
+ *      NONE
+*****************************************************************************/
+STATUS sDbInsertData2StatTbl(sqlite3 *sqlHdl, T_UID uid, T_USTAT uStat);
+
+/*****************************************************************************
+ * DECRIPTION:
+ *      sDbInsertData2VerifyTbl() 向数据库的 USER_VERIFY_TBL 表中添加数据
+ * INPUTS:
+ *      sqlite3* sqlHdl
+ *      uid
+ *      q1,q2,q3     验证问题（3个）
+ * OUTPUTS:
+ *      NONE
+ * RETURNS:
+ *      OK      --  成功
+ *      ERROR   --  失败
+ *      INVALID_PARAM --  参数错误
+ * CAUTIONS:
+ *      NONE
+*****************************************************************************/
+STATUS sDbInsertData2VerifyTbl
+(
+        sqlite3 *sqlHdl,
+        T_UID uid,
+        T_UVERIFIES q1,
+        T_UVERIFIES q2,
+        T_UVERIFIES q3
+);
+
+/*****************************************************************************
+ * DECRIPTION:
+ *      sDbSelectConditionFromTbl 从表中select出符合条件的表项，存到指针void* reslt中
+ * INPUTS:
+ *      sqlite3* sqlHdl 操作数据库对象
+ *      char* condition 选择条件(需要是完整的SQL语句)
+ *      void* reslt     存放查询的结果
+ * OUTPUTS:
+ *      NONE
+ * RETURNS:
+ *      OK      --  成功
+ *      ERROR   --  失败
+ *      INVALID_PARAM --  参数错误
+ * CAUTIONS:
+ *      由于结果的数据结构不定，因此使用void*，最后要根据实际情况进行转化
+*****************************************************************************/
+STATUS sDbSelectConditionFromTbl(sqlite3* sqlHdl, char* condition, void* reslt);
+
 
 #endif // MIM_SERVER_H

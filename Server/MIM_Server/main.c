@@ -20,9 +20,10 @@
 #include "mim_sc_common.h"
 #include "mim_server_db.h"
 
+sqlite3 *sqlHdl = NULL; //SQL处理对象指针
+
 int main()
 {
-    sqlite3 *sqlHdl = NULL; //SQL处理对象指针
     STATUS ret = ERROR;
 
     PRINTF("-------------------------------------\n"
@@ -71,25 +72,33 @@ int main()
     ret = sDbInsertData2PasswdTbl(sqlHdl, uid, reg->uName, reg->uPasswd);
     if(OK != sSqlChkRet (sqlHdl, ret, "test insert"))
     {
-        PRINTF("_sDbInsertData2PasswdTbl__: FAILED.");
+        PRINTF("__sDbInsertData2PasswdTbl__: FAILED.");
         return -1;
     }
     else
     {
-        PRINTF("_sDbInsertData2PasswdTbl__: OK.");
+        PRINTF("__sDbInsertData2PasswdTbl__: OK.");
     }
 
     free(reg);
 
-    ret = sDbSelectConditionFromTbl(sqlHdl, "*", "USER_PASSWD_TBL");
+    sDbInsertData2InfoTbl(sqlHdl, uid, "male", "xuchuaner@qq.com", "1810101");
+
+    T_UPASSWD passwd = (T_UPASSWD)malloc (UPASSWD_LEN);
+
+    ret = sDbSelectConditionFromTbl(sqlHdl,
+                                    "SELECT UPASSWD FROM USER_PASSWD_TBL WHERE UID=8;",
+                                    passwd);
+    free(passwd);
+
     if(OK != sSqlChkRet (sqlHdl, ret, "test select"))
     {
-        PRINTF("_+sDbSelectConditionFromTbl__: FAILED.");
+        PRINTF("__sDbSelectConditionFromTbl__: FAILED.");
         return -1;
     }
     else
     {
-        PRINTF("_+sDbSelectConditionFromTbl__: OK.");
+        PRINTF("__sDbSelectConditionFromTbl__: OK.");
     }
 
     /************test**************/

@@ -33,6 +33,9 @@ typedef int BOOL;   //处理结果使用自定义的BOOL类型
 #define TRUE    (0)
 #define FALSE   (-1)
 
+#define FRD_COUNT_LIMIT 100   //好友数量上限
+#define UPASSWD_LEN 16  //用户密码长度
+#define UNAME_LEN 32    //用户名长度
 
 /* 定义C/S之间的通信命令标志，使用枚举类csCmd来表示，用于C/S之间命令鉴别 */
 typedef enum e_CommonCmd{
@@ -60,7 +63,8 @@ typedef enum e_CommonCmd{
 
 /* 自定义输出方式，使用fflush刷新，防止缓冲导致的输出不完整 */
 #define PRINTF(format, args...) \
-    printf("\n"format, ##args); \
+    printf("\n"); \
+    printf(format, ##args); \
     fflush(stdout)
 
 /* 在DEBUG模式下，用于打印出错文件 */
@@ -156,15 +160,28 @@ typedef struct {
     BOOL result;    //服务器的处理结果：TURE/FALSE
 }SR_GEN;
 
-#define FRD_COUNT_LIMIT 100   //好友数量上限
 
 //服务器回复好友信息同步
 typedef struct{
     T_CSCMD cmd;
     T_UID uId;
     int frdCount;   //好友数量
-    T_UID frdList[FRD_COUNT_LIMIT]; //好友id信息数组(最多100人)
+    T_UID frdsList[FRD_COUNT_LIMIT]; //好友id信息数组(最多100人)
 }SR_SYNC;
 
+//定义User结构体,主要可以用户服务器从数据库读取数据后，方便保存信息
+typedef struct{
+    T_UID   id;    //用户id
+    T_UNAME name;  //用户名字
+    T_UPASSWD passwd;  //用户密码
+    T_USEX sex;    //用户性别
+    T_UMAIL mail;  //用户邮箱
+    T_UTEL tel;    //用户电话
+    T_USTAT stat;  //用户在线状态
+    T_UVERIFIES q1; //用户验证问题答案1
+    T_UVERIFIES q2; //用户验证问题答案2
+    T_UVERIFIES q3; //用户验证问题答案3
+    T_UID frdsList[FRD_COUNT_LIMIT];    //用户的好友列表
+}S_USER;
 
 #endif // MIM_SC_COMMON_H
