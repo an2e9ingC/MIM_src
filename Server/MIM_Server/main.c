@@ -16,6 +16,7 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <sqlite3.h>
+#include <string.h>
 
 #include "mim_sc_common.h"
 #include "mim_server_db.h"
@@ -84,20 +85,21 @@ int main()
 
     sDbInsertData2InfoTbl(sqlHdl, uid, "male", "xuchuaner@qq.com", "1810101");
     sDbInsertData2FrdsTbl(sqlHdl, uid, 111, "ftest1");
-    sDbInsertData2FrdsTbl(sqlHdl, 9, 222, "ftest2");
-    sDbDelDataFromFrdsTbl (sqlHdl, 9);
+    sDbInsertData2FrdsTbl(sqlHdl, uid, 222, "ftest2");
     sDbInsertData2StatTbl(sqlHdl, uid, ON_LINE);
     sDbInsertData2VerifyTbl(sqlHdl, uid, "yanzheng1", "yanzheng2", "yanzheng3");
     sDbUpdateMail(sqlHdl, uid, "newmail@mail.com");
 
     T_UNAME testname= (T_UNAME)malloc(UNAME_LEN);
+    bzero(testname, UNAME_LEN);
     sDbGetName (sqlHdl, uid, testname);
-    PRINTF("%d--name: %s.", uid, testname);
+    PRINTF("%d--name: %s....", uid, testname);
     free(testname);
 
-    T_UPASSWD passwd = (T_UPASSWD)malloc (UPASSWD_LEN);
+    T_UID frdList[FRD_COUNT_LIMIT] = {0};
+    int frdCount = sDbGetFrdsList(sqlHdl, uid, frdList);
+    PRINTF("%d has %d friends.", uid, frdCount);
 
-    free(passwd);
 
     if(OK != sSqlChkRet (sqlHdl, ret, "test select"))
     {

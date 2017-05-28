@@ -14,6 +14,10 @@
  *      2017-05-15 12:21:20 添加数据库（表）的初始化函数
  *      2017-05-22 11:36:51 删除sDbOpen, 设置sDbClose返回值为void
  *      2017-05-22 15:31:43 精简.c文件中的函数注释
+ *      2017-05-28 23:16:00 修改USER_FRDS_TBL的UID属性，UID不能为主键，否则会无法
+ *                          添加多个好友
+ *      2017-05-29 02:21:03 sDbCallbackSave2FrdsList 函数需要处理（！！！！）
+ *                          sDbGetFrdsList（！！！）
 *****************************************************************************/
 #include <stdio.h>
 #include <stdlib.h>
@@ -91,8 +95,8 @@ static STATUS sTblUserFrdsInit(sqlite3* sqlHdl)
 {
     STATUS ret = ERROR;
     char *sql = "CREATE TABLE USER_FRDS_TBL("
-                "UID    INT     PRIMARY KEY     NOT NULL,\n"
-                "FID    INT                     NOT NULL,\n"
+                "UID    INT          NOT NULL,\n"
+                "FID    INT          NOT NULL,\n"
                 "REMARK  TEXT   \n"
                 ");";
 
@@ -169,7 +173,7 @@ static STATUS sTblUserVerifyInit(sqlite3* sqlHdl)
  *      char **colVal   --    表示行中字段值的字符串数组
  *      char **colName -- 表示列名称的字符串数组
 *******************************************************************************/
-static int sDbShowTbl(void *execParam, int colNum, char **colVal, char **colName)
+static int sDbCallbackShowTbl(void *execParam, int colNum, char **colVal, char **colName)
 {
     int i;
     PRINTF("%s", (char*)execParam);
@@ -185,12 +189,15 @@ static int sDbShowTbl(void *execParam, int colNum, char **colVal, char **colName
  * DECRIPTION:
  *      回调函数，将查询的内容保存到入参 void* reslt
  * INPUTS:
- *      void *reslt     --  用于保存查询到的数据
+ *      void *reslt     --  用于保存查询到的数据(保存的格式是 char*)
  *      int  colNum     --  每一行的列数
  *      char **colVal   --  表示行中字段值的字符串数组
  *      char **colName  --  表示列名称的字符串数组
+ * CAUTIONS:
+ *      不适用好友列表的保存(好友列表的处理使用 sDbCallbackSave2FrdsList )
+ *      reslt 保存的数据格式是 char*   ！！！
 *******************************************************************************/
-static int sDbSave2Reslt(void *reslt, int colNum, char **colVal, char **colName)
+static int sDbCallbackSave2Reslt(void *reslt, int colNum, char **colVal, char **colName)
 {
     int i;
     char * tmp = NULL;
@@ -202,13 +209,97 @@ static int sDbSave2Reslt(void *reslt, int colNum, char **colVal, char **colName)
 #ifdef   _DEBUG
     PRINTF("__%s__:", __FUNCTION__);
     PRINTF(" colName = %s.\n"
-           "strlen() = %lu.\n"
            "reslt = %s.",
            colName[0],
-           strlen(tmp),
            (char*)reslt);
 #endif
     return 0;
+}
+
+/*****************************************************************************
+ * DECRIPTION:
+ *      回调函数，只用于保存好友列表（这部分需要单独处理下）
+ * INPUTS:
+ *      void *reslt     --  用于保存查询到的数据
+ *      int  colNum     --  每一行的列数
+ *      char **colVal   --  表示行中字段值的字符串数组
+ *      char **colName  --  表示列名称的字符串数组
+*******************************************************************************/
+static int sDbCallbackSave2FrdsList(void *reslt, int colNum, char **colVal, char **colName)
+{
+    int i;
+//    char tmp[10] = {'\0'};  //临时存储好友的id（字符串型）
+
+//    for(i=0; i<colNum; i++){
+////        *tmp = colVal[i] ? colVal[i] : "NULL";
+//        PRINTF("%s = %s\n", colName[i], colVal[i] ? colVal[i] : "NULL");
+//    }
+    return 0;
+}
+
+/*****************************************************************************
+ * DECRIPTION:
+ *      sDbGetFromTbl 从表中select出符合条件的表项,并保存到reslt
+ * INPUTS:
+ *      sqlite3* sqlHdl 操作数据库对象
+ *      char* condition 选择条件(需要是完整的SQL语句)
+ *      void* reslt     存放查询的结果
+ * CAUTIONS:
+ *      保证入参不为NULL
+*****************************************************************************/
+static STATUS sDbGetFromTbl(sqlite3 *sqlHdl, char *condition, void *reslt)
+{
+    STATUS ret = ERROR;
+
+    /* 执行SQL语句 */
+    ret = sqlite3_exec(sqlHdl, condition, sDbCallbackSave2Reslt, reslt, NULL);
+
+#ifdef _DEBUG
+    ret = sSqlChkRet (sqlHdl, ret, (const char*)__FUNCTION__);
+#endif
+
+    return ret;
+}
+
+
+/*****************************************************************************
+ * DECRIPTION:
+ *      用户统计指定表 tblName 当中相应的账号 uid 的记录个数
+ * INPUTS:
+ *      sqlHdl
+ *      tblName 表名
+ *      uid     要统计的uid
+ * OUTPUTS:
+ *      NONE
+ * RETURNS:
+ *      符合条件的条目数量
+ * CAUTIONS:
+ *      调用者负责入参的合法性
+*****************************************************************************/
+static int sDbCountUidOfTbl(sqlite3* sqlHdl, char* tblName, T_UID uid)
+{
+    char sql[SQL_LEN] = "SELECT COUNT(UID) FROM ";//统计uid好友数量
+    char tmp[50] = {'\0'};
+    int ret = 0;
+    char countStr[5] = {'\0'};  //用户回调函数的临时存放 字符串型的数量
+    int retCount = 0;   //函数返回值，即统计的数量
+
+    sprintf(tmp, "%s WHERE UID =", tblName);
+    strncat(sql, tmp, strlen(tmp));
+
+    sprintf(tmp, "%d;", uid);
+    strncat(sql, tmp, strlen(tmp));
+
+    ret = sqlite3_exec (sqlHdl, sql, sDbCallbackSave2Reslt, countStr, NULL);
+
+    retCount = atoi(countStr);
+
+#ifdef _DEBUG
+    PRINTF("%s", sql);
+    sSqlChkRet (sqlHdl, ret, __FUNCTION__);
+#endif
+
+    return retCount;
 }
 
 /*****************************************************************************
@@ -241,30 +332,6 @@ static STATUS sDbDelDataFromTbl(sqlite3* sqlHdl, T_UID uid, char* tblName)
 #ifdef _DEBUG
     PRINTF("%s", sql);
     sSqlChkRet (sqlHdl, ret, __FUNCTION__);
-#endif
-
-    return ret;
-}
-
-/*****************************************************************************
- * DECRIPTION:
- *      sDbGetFromTbl 从表中select出符合条件的表项,并保存到reslt
- * INPUTS:
- *      sqlite3* sqlHdl 操作数据库对象
- *      char* condition 选择条件(需要是完整的SQL语句)
- *      void* reslt     存放查询的结果
- * CAUTIONS:
- *      保证入参不为NULL
-*****************************************************************************/
-static STATUS sDbGetFromTbl(sqlite3 *sqlHdl, char *condition, void *reslt)
-{
-    STATUS ret = ERROR;
-
-    /* 执行SQL语句 */
-    ret = sqlite3_exec(sqlHdl, condition, sDbSave2Reslt, reslt, NULL);
-
-#ifdef _DEBUG
-    ret = sSqlChkRet (sqlHdl, ret, (const char*)__FUNCTION__);
 #endif
 
     return ret;
@@ -1084,7 +1151,8 @@ STATUS sDbUpdateStat(sqlite3* sqlHdl, T_UID uid, T_USTAT newStat)
 *****************************************************************************/
 T_UNAME sDbGetName(sqlite3 *sqlHdl, T_UID uid, T_UNAME name)
 {
-    T_UNAME ret = name;
+    T_UNAME retName = name;
+    STATUS ret = ERROR;
 
     /* 入参检查 */
     if (ISNULL(sqlHdl))
@@ -1104,14 +1172,14 @@ T_UNAME sDbGetName(sqlite3 *sqlHdl, T_UID uid, T_UNAME name)
     strncat(sql, tmp, strlen(tmp));
 
     //执行SQL语句
-    ret = sDbGetFromTbl(sqlHdl, sql, ret);
+    ret = sDbGetFromTbl(sqlHdl, sql, retName);
 
 #ifdef _DEBUG
     PRINTF("%s", sql);
     sSqlChkRet (sqlHdl, ret, __FUNCTION__);
 #endif
 
-    return ret;
+    return retName;
 }
 
 /*****************************************************************************
@@ -1120,27 +1188,80 @@ T_UNAME sDbGetName(sqlite3 *sqlHdl, T_UID uid, T_UNAME name)
  * INPUTS:
  *      sqlHdl 操作数据库对象
  *      uid
+ *      passwd  保存获取的密码
 *****************************************************************************/
-T_UPASSWD sDbGetPasswd(sqlite3 *sqlHdl, T_UID uid)
+T_UPASSWD sDbGetPasswd(sqlite3 *sqlHdl, T_UID uid, T_UPASSWD passwd)
 {
-    T_UPASSWD ret = "NULL";
+    T_UPASSWD retPasswd = passwd;
+    STATUS ret = ERROR;
 
-    return ret;
+    /* 入参检查 */
+    if (ISNULL(sqlHdl))
+    {
+#ifdef _DEBUG
+        PRINTFILE;
+        PRINTF("[%s: sqlHdl is NULL.]", __FUNCTION__);
+#endif
+        return INVALID_PARAM;
+    }
+
+    //构造SQL语句
+    char sql[SQL_LEN] = "SELECT UPASSWD FROM USER_PASSWD_TBL WHERE UID = ";  //SQL语句
+    char tmp[50] = {'\0'};
+
+    sprintf(tmp, "%d;", uid);
+    strncat(sql, tmp, strlen(tmp));
+
+    //执行SQL语句
+    ret = sDbGetFromTbl(sqlHdl, sql, retPasswd);
+
+#ifdef _DEBUG
+    PRINTF("%s", sql);
+    sSqlChkRet (sqlHdl, ret, __FUNCTION__);
+#endif
+
+    return retPasswd;
 }
 
 /*****************************************************************************
  * DECRIPTION:
- *      获取用户性别 USER_INFO_TBL并将其填入S_USER结构体
+ *      获取用户性别 USER_INFO_TBL 并将其填入S_USER结构体
  * INPUTS:
  *      sqlHdl 操作数据库对象
  *      uid
+ *      sex     保存获取的性别
 *****************************************************************************/
-T_USEX sDbGetSex(sqlite3* sqlHdl, T_UID uid)
+T_USEX sDbGetSex(sqlite3* sqlHdl, T_UID uid, T_USEX sex)
 {
+    T_USEX retSex = sex;
     STATUS ret = ERROR;
 
+    /* 入参检查 */
+    if (ISNULL(sqlHdl))
+    {
+#ifdef _DEBUG
+        PRINTFILE;
+        PRINTF("[%s: sqlHdl is NULL.]", __FUNCTION__);
+#endif
+        return INVALID_PARAM;
+    }
 
-    return ret;
+    //构造SQL语句
+    char sql[SQL_LEN] = "SELECT SEX FROM USER_INFO_TBL WHERE UID = ";  //SQL语句
+    char tmp[50] = {'\0'};
+
+    sprintf(tmp, "%d;", uid);
+    strncat(sql, tmp, strlen(tmp));
+
+    //执行SQL语句
+    ret = sDbGetFromTbl(sqlHdl, sql, retSex);
+
+#ifdef _DEBUG
+    PRINTF("%s", sql);
+    sSqlChkRet (sqlHdl, ret, __FUNCTION__);
+#endif
+
+    return retSex;
 }
 
 /*****************************************************************************
@@ -1149,13 +1270,40 @@ T_USEX sDbGetSex(sqlite3* sqlHdl, T_UID uid)
  * INPUTS:
  *      sqlHdl 操作数据库对象
  *      uid
+ *      mail    保存获取的邮箱
 **************************************************************/
-T_UMAIL sDbGetMail(sqlite3* sqlHdl, T_UID uid)
+T_UMAIL sDbGetMail(sqlite3* sqlHdl, T_UID uid, T_UMAIL mail)
 {
+    T_UMAIL retMail = mail;
     STATUS ret = ERROR;
 
+    /* 入参检查 */
+    if (ISNULL(sqlHdl))
+    {
+#ifdef _DEBUG
+        PRINTFILE;
+        PRINTF("[%s: sqlHdl is NULL.]", __FUNCTION__);
+#endif
+        return INVALID_PARAM;
+    }
 
-    return ret;
+    //构造SQL语句
+    char sql[SQL_LEN] = "SELECT EMAIL FROM USER_INFO_TBL WHERE UID = ";  //SQL语句
+    char tmp[50] = {'\0'};
+
+    sprintf(tmp, "%d;", uid);
+    strncat(sql, tmp, strlen(tmp));
+
+    //执行SQL语句
+    ret = sDbGetFromTbl(sqlHdl, sql, retMail);
+
+#ifdef _DEBUG
+    PRINTF("%s", sql);
+    sSqlChkRet (sqlHdl, ret, __FUNCTION__);
+#endif
+
+
+    return retMail;
 }
 
 /*****************************************************************************
@@ -1164,13 +1312,40 @@ T_UMAIL sDbGetMail(sqlite3* sqlHdl, T_UID uid)
  * INPUTS:
  *      sqlHdl 操作数据库对象
  *      uid
+ *      tel     保存获取的电话
 *****************************************************************************/
-T_UTEL sDbGetTel(sqlite3 *sqlHdl, T_UID uid)
+T_UTEL sDbGetTel(sqlite3 *sqlHdl, T_UID uid, T_UTEL tel)
 {
+    T_UTEL retTel = tel;
     STATUS ret = ERROR;
 
+    /* 入参检查 */
+    if (ISNULL(sqlHdl))
+    {
+#ifdef _DEBUG
+        PRINTFILE;
+        PRINTF("[%s: sqlHdl is NULL.]", __FUNCTION__);
+#endif
+        return INVALID_PARAM;
+    }
 
-    return ret;
+    //构造SQL语句
+    char sql[SQL_LEN] = "SELECT TEL FROM USER_INFO_TBL WHERE UID = ";  //SQL语句
+    char tmp[50] = {'\0'};
+
+    sprintf(tmp, "%d;", uid);
+    strncat(sql, tmp, strlen(tmp));
+
+    //执行SQL语句
+    ret = sDbGetFromTbl(sqlHdl, sql, retTel);
+
+#ifdef _DEBUG
+    PRINTF("%s", sql);
+    sSqlChkRet (sqlHdl, ret, __FUNCTION__);
+#endif
+
+
+    return retTel;
 }
 
 /*****************************************************************************
@@ -1179,13 +1354,43 @@ T_UTEL sDbGetTel(sqlite3 *sqlHdl, T_UID uid)
  * INPUTS:
  *      sqlHdl 操作数据库对象
  *      uid
+ *      frdList 保存获取的好友列表
 *****************************************************************************/
-T_UID* sDbGetFrdsList(sqlite3 *sqlHdl, T_UID uid)
+int sDbGetFrdsList(sqlite3 *sqlHdl, T_UID uid, T_UID *frdList)
 {
+    T_UID* retList = frdList;
+    int count = 0;
     STATUS ret = ERROR;
 
+    /* 入参检查 */
+    if (ISNULL(sqlHdl))
+    {
+#ifdef _DEBUG
+        PRINTFILE;
+        PRINTF("[%s: sqlHdl is NULL.]", __FUNCTION__);
+#endif
+        return INVALID_PARAM;
+    }
 
-    return ret;
+    /* 1. 统计uid好友数量 保存到count */
+    count = sDbCountUidOfTbl(sqlHdl, "USER_FRDS_TBL", uid);
+
+    /* 2. 好友保存到好友列表 frdList 中 */
+    char sql[SQL_LEN] = "SELECT FID FROM USER_FRDS_TBL WHERE UID = ";
+    char tmp[50] = {'\0'};
+
+    sprintf(tmp, "%d;", uid);
+    strncat(sql, tmp, strlen(tmp));
+
+    ret = sqlite3_exec(sqlHdl, sql, sDbCallbackSave2FrdsList, frdList, NULL);
+
+#ifdef _DEBUG
+    PRINTF("%s", sql);
+    sSqlChkRet (sqlHdl, ret, __FUNCTION__);
+#endif
+
+
+    return count;
 }
 
 /*****************************************************************************
@@ -1197,10 +1402,37 @@ T_UID* sDbGetFrdsList(sqlite3 *sqlHdl, T_UID uid)
 *****************************************************************************/
 T_USTAT sDbGetStat(sqlite3 *sqlHdl, T_UID uid)
 {
+    T_USTAT retStat = OFF_LINE;
+    char statStr[2] = {'\0'};   //临时存放str型的状态数据，需要atoi转换成int型
     STATUS ret = ERROR;
 
+    /* 入参检查 */
+    if (ISNULL(sqlHdl))
+    {
+#ifdef _DEBUG
+        PRINTFILE;
+        PRINTF("[%s: sqlHdl is NULL.]", __FUNCTION__);
+#endif
+        return INVALID_PARAM;
+    }
 
-    return ret;
+    //构造SQL语句
+    char sql[SQL_LEN] = "SELECT TEL FROM USER_STAT_TBL WHERE UID = ";
+    char tmp[50] = {'\0'};
+
+    sprintf(tmp, "%d;", uid);
+    strncat(sql, tmp, strlen(tmp));
+
+    ret = sDbGetFromTbl(sqlHdl, sql, statStr);
+
+    retStat = atoi(statStr);    //将得到的 str 型转化成 T_USTAT
+
+#ifdef _DEBUG
+    PRINTF("%s", sql);
+    sSqlChkRet (sqlHdl, ret, __FUNCTION__);
+#endif
+
+    return retStat;
 }
 
 /*****************************************************************************
@@ -1209,13 +1441,11 @@ T_USTAT sDbGetStat(sqlite3 *sqlHdl, T_UID uid)
  * INPUTS:
  *      sqlHdl 操作数据库对象
  *      uid
+ *      verifyArray 保存获取的验证问题数组
  * RETURN:
  *      T_UVERIFIES* 保存验证问题的数组
 *****************************************************************************/
-T_UVERIFIES* sDbGetVerify(sqlite3 *sqlHdl, T_UID uid)
+T_UVERIFIES* sDbGetVerify(sqlite3 *sqlHdl, T_UID uid, T_UVERIFIES* verifyArray)
 {
-    STATUS ret = ERROR;
-
-
-    return ret;
+    // 同frdList 需要处理！！！
 }

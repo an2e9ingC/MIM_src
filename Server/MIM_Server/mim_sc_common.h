@@ -34,8 +34,11 @@ typedef int BOOL;   //处理结果使用自定义的BOOL类型
 #define FALSE   (-1)
 
 #define FRD_COUNT_LIMIT 100   //好友数量上限
-#define UPASSWD_LEN 16  //用户密码长度
-#define UNAME_LEN 32    //用户名长度
+#define UPASSWD_LEN 17  //用户密码长度
+#define UNAME_LEN 33    //用户名长度
+#define USEX_LEN 7  //MALE,FEMALE 最长为6,还需要留 '\0' 一个字节
+#define UMAIL_LEN 33    //邮箱地址长度
+#define UTEL_LEN 12 //国内手机号长度11
 
 /* 定义C/S之间的通信命令标志，使用枚举类csCmd来表示，用于C/S之间命令鉴别 */
 typedef enum e_CommonCmd{

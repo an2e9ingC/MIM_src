@@ -417,8 +417,9 @@ T_UNAME sDbGetName(sqlite3* sqlHdl, T_UID uid, T_UNAME name);
  * INPUTS:
  *      sqlHdl 操作数据库对象
  *      uid
+ *      passwd  保存获取的密码
 *****************************************************************************/
-T_UPASSWD sDbGetPasswd(sqlite3* sqlHdl, T_UID uid);
+T_UPASSWD sDbGetPasswd(sqlite3* sqlHdl, T_UID uid, T_UPASSWD passwd);
 
 /*****************************************************************************
  * DECRIPTION:
@@ -426,8 +427,9 @@ T_UPASSWD sDbGetPasswd(sqlite3* sqlHdl, T_UID uid);
  * INPUTS:
  *      sqlHdl 操作数据库对象
  *      uid
+ *      sex     保存获取的性别
 *****************************************************************************/
-T_USEX sDbGetSex(sqlite3* sqlHdl, T_UID uid);
+T_USEX sDbGetSex(sqlite3* sqlHdl, T_UID uid, T_USEX sex);
 
 /*****************************************************************************
  * DECRIPTION:
@@ -435,8 +437,9 @@ T_USEX sDbGetSex(sqlite3* sqlHdl, T_UID uid);
  * INPUTS:
  *      sqlHdl 操作数据库对象
  *      uid
+ *      mail    保存获取的邮箱
 **************************************************************/
-T_UMAIL sDbGetMail(sqlite3* sqlHdl, T_UID uid);
+T_UMAIL sDbGetMail(sqlite3* sqlHdl, T_UID uid, T_UMAIL mail);
 
 
 /*****************************************************************************
@@ -445,8 +448,9 @@ T_UMAIL sDbGetMail(sqlite3* sqlHdl, T_UID uid);
  * INPUTS:
  *      sqlHdl 操作数据库对象
  *      uid
+ *      tel     保存获取的电话
 *****************************************************************************/
-T_UTEL sDbGetTel(sqlite3* sqlHdl, T_UID uid);
+T_UTEL sDbGetTel(sqlite3* sqlHdl, T_UID uid, T_UTEL tel);
 
 
 /*****************************************************************************
@@ -455,8 +459,13 @@ T_UTEL sDbGetTel(sqlite3* sqlHdl, T_UID uid);
  * INPUTS:
  *      sqlHdl 操作数据库对象
  *      uid
+ *      frdList 保存获取的好友列表
+ * OUTPUTS:
+ *      frdList 获取的好友列表
+ * RETURN:
+ *      好友的数量
 *****************************************************************************/
- T_UID* sDbGetFrdsList(sqlite3* sqlHdl, T_UID uid);
+ int sDbGetFrdsList(sqlite3* sqlHdl, T_UID uid, T_UID* frdList);
 
 /*****************************************************************************
  * DECRIPTION:
@@ -473,10 +482,11 @@ T_USTAT  sDbGetStat(sqlite3* sqlHdl, T_UID uid);
  * INPUTS:
  *      sqlHdl 操作数据库对象
  *      uid
+ *      verifyArray 保存获取的验证问题数组
  * RETURN:
  *      T_UVERIFIES* 保存验证问题的数组
 *****************************************************************************/
-T_UVERIFIES *sDbGetVerify(sqlite3* sqlHdl, T_UID uid);
+T_UVERIFIES *sDbGetVerify(sqlite3* sqlHdl, T_UID uid, T_UVERIFIES *verifyArray);
 
 
 #endif // MIM_SERVER_H
