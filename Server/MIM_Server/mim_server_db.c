@@ -211,6 +211,64 @@ static int sDbSave2Reslt(void *reslt, int colNum, char **colVal, char **colName)
     return 0;
 }
 
+/*****************************************************************************
+ * DECRIPTION:
+ *      sDbDelDataFromTbl() 从数据库的表中删除数据
+ * INPUTS:
+ *      sqlite3* sqlHdl
+ *      uid      由系统生成的uid
+ *      tblName  表名
+ * CAUTIONS:
+ *      static,调用者需要保证sqlHdl,tblName不为空
+*****************************************************************************/
+static STATUS sDbDelDataFromTbl(sqlite3* sqlHdl, T_UID uid, char* tblName)
+{
+    STATUS ret = ERROR;
+
+    //构造SQL语句
+    char sql[SQL_LEN] = "DELETE FROM ";  //SQL语句
+    char tmp[50] = {'\0'};
+
+    sprintf(tmp, " %s WHERE UID = ", tblName);
+    strncat(sql, tmp, strlen(tmp)); //填充sql语句的 表名 部分
+
+    sprintf(tmp, "%d ;", uid);
+    strncat(sql, tmp, strlen(tmp)); //填充sql语句的 UID 部分
+
+    //执行SQL语句
+    ret = sqlite3_exec (sqlHdl, sql,  NULL, NULL, NULL);
+
+#ifdef _DEBUG
+    PRINTF("%s", sql);
+    sSqlChkRet (sqlHdl, ret, __FUNCTION__);
+#endif
+
+    return ret;
+}
+
+/*****************************************************************************
+ * DECRIPTION:
+ *      sDbGetFromTbl 从表中select出符合条件的表项,并保存到reslt
+ * INPUTS:
+ *      sqlite3* sqlHdl 操作数据库对象
+ *      char* condition 选择条件(需要是完整的SQL语句)
+ *      void* reslt     存放查询的结果
+ * CAUTIONS:
+ *      保证入参不为NULL
+*****************************************************************************/
+static STATUS sDbGetFromTbl(sqlite3 *sqlHdl, char *condition, void *reslt)
+{
+    STATUS ret = ERROR;
+
+    /* 执行SQL语句 */
+    ret = sqlite3_exec(sqlHdl, condition, sDbSave2Reslt, reslt, NULL);
+
+#ifdef _DEBUG
+    ret = sSqlChkRet (sqlHdl, ret, (const char*)__FUNCTION__);
+#endif
+
+    return ret;
+}
 
 /*****************************************************************************
  * DECRIPTION:
@@ -606,18 +664,26 @@ STATUS sDbInsertData2VerifyTbl
 
 /*****************************************************************************
  * DECRIPTION:
- *      sDbDelDataFromPasswdTbl() 从数据库的USER_PASSWD_TBL表中删除数据
+ *      sDbDelDataFromPasswdTbl() 从数据库的 USER_PASSWD_TBL 表中删除数据
  * INPUTS:
  *      sqlite3* sqlHdl
  *      uid     由系统生成的uid,
 *****************************************************************************/
-STATUS sDbDelDataFromPasswdTbl
-(
-        sqlite3 *sqlHdl,
-        T_UID uid,
-)
+STATUS sDbDelDataFromPasswdTbl(sqlite3 *sqlHdl, T_UID uid)
 {
     STATUS ret = ERROR;
+
+    /* 入参检查 */
+    if (ISNULL(sqlHdl))
+    {
+#ifdef _DEBUG
+        PRINTFILE;
+#endif
+        PRINTF("[%s: sqlHdl is NULL.]", __FUNCTION__);
+        return INVALID_PARAM;
+    }
+
+    ret = sDbDelDataFromTbl(sqlHdl, uid, "USER_PASSWD_TBL");
 
     return ret;
 }
@@ -629,79 +695,113 @@ STATUS sDbDelDataFromPasswdTbl
  *      sqlite3* sqlHdl
  *      uid
 *****************************************************************************/
-STATUS sDbDelDataFromInfoTbl
-(
-    sqlite3 *sqlHdl,
-    T_UID uid
-)
+STATUS sDbDelDataFromInfoTbl(sqlite3 *sqlHdl, T_UID uid)
 {
     STATUS ret = ERROR;
+
+    /* 入参检查 */
+    if (ISNULL(sqlHdl))
+    {
+#ifdef _DEBUG
+        PRINTFILE;
+#endif
+        PRINTF("[%s: sqlHdl is NULL.]", __FUNCTION__);
+        return INVALID_PARAM;
+    }
+
+    ret = sDbDelDataFromTbl(sqlHdl, uid, "USER_INFO_TBL");
 
     return ret;
 }
 
 /*****************************************************************************
  * DECRIPTION:
- *      sDbDelDataFromFrdsTbl() 从数据库的 USER_FRDS_TBL 表中删除数据
+ *      sDbDelDataFromFrdsTbl() 从数据库的 USER_FRDS_TBL 表中删除uid对应的所有数据
  * INPUTS:
  *      sqlite3* sqlHdl
  *      uid
 *****************************************************************************/
-STATUS sDbDelDataFromFrdsTbl
-(
-    sqlite3 *sqlHdl,
-    T_UID uid,
-)
+STATUS sDbDelDataFromFrdsTbl(sqlite3 *sqlHdl, T_UID uid)
 {
-
     STATUS ret = ERROR;
+
+    /* 入参检查 */
+    if (ISNULL(sqlHdl))
+    {
+#ifdef _DEBUG
+        PRINTFILE;
+#endif
+        PRINTF("[%s: sqlHdl is NULL.]", __FUNCTION__);
+        return INVALID_PARAM;
+    }
+
+    ret = sDbDelDataFromTbl(sqlHdl, uid, "USER_FRDS_TBL");
 
     return ret;
 }
 
 /*****************************************************************************
  * DECRIPTION:
- *      sDbDelData2StatTbl() 从数据库的 USER_STAT_TBL 表中删除数据
+ *      sDbDelDataFromStatTbl() 从数据库的 USER_STAT_TBL 表中删除数据
  * INPUTS:
  *      sqlite3* sqlHdl
  *      uId
  *      uStat     用户在线状态
 *****************************************************************************/
-STATUS sDbDelData2StatTbl(sqlite3 *sqlHdl, T_UID uid)
+STATUS sDbDelDataFromStatTbl(sqlite3 *sqlHdl, T_UID uid)
 {
     STATUS ret = ERROR;
+
+    /* 入参检查 */
+    if (ISNULL(sqlHdl))
+    {
+#ifdef _DEBUG
+        PRINTFILE;
+#endif
+        PRINTF("[%s: sqlHdl is NULL.]", __FUNCTION__);
+        return INVALID_PARAM;
+    }
+
+    ret = sDbDelDataFromTbl(sqlHdl, uid, "USER_STAT_TBL");
 
     return ret;
 }
 
 /*****************************************************************************
  * DECRIPTION:
- *      sDbDeltDataFromVerifyTbl() 向数据库的 USER_VERIFY_TBL 表中添加数据
+ *      sDbDelDataFromVerifyTbl() 向数据库的 USER_VERIFY_TBL 表中添加数据
  * INPUTS:
  *      sqlite3* sqlHdl
  *      uid
 *****************************************************************************/
-STATUS sDbDeltDataFromVerifyTbl
-(
-        sqlite3 *sqlHdl,
-        T_UID uid
-)
+STATUS sDbDelDataFromVerifyTbl(sqlite3 *sqlHdl, T_UID uid)
 {
     STATUS ret = ERROR;
+
+    /* 入参检查 */
+    if (ISNULL(sqlHdl))
+    {
+#ifdef _DEBUG
+        PRINTFILE;
+#endif
+        PRINTF("[%s: sqlHdl is NULL.]", __FUNCTION__);
+        return INVALID_PARAM;
+    }
+
+    ret = sDbDelDataFromTbl(sqlHdl, uid, "USER_VERIFY_TBL");
 
     return ret;
 }
 
-
 /*****************************************************************************
  * DECRIPTION:
- *      sDbSelectConditionFromTbl 从表中select出符合条件的表项
+ *      sDbUpdateName 更新 USER_PASSWD_TBL 表中的 UNAME
  * INPUTS:
- *      sqlite3* sqlHdl 操作数据库对象
- *      char* condition 选择条件(需要是完整的SQL语句)
- *      void* reslt     存放查询的结果
+ *      sqlHdl 操作数据库对象
+ *      uid
+ *      newName 新的UNAME
 *****************************************************************************/
-STATUS sDbSelectConditionFromTbl(sqlite3 *sqlHdl, char *condition, void *reslt)
+STATUS sDbUpdateName(sqlite3* sqlHdl, T_UID uid, T_UNAME newName)
 {
     STATUS ret = ERROR;
 
@@ -715,10 +815,407 @@ STATUS sDbSelectConditionFromTbl(sqlite3 *sqlHdl, char *condition, void *reslt)
         return INVALID_PARAM;
     }
 
-    /* 执行SQL语句 */
-    ret = sqlite3_exec(sqlHdl, condition, sDbSave2Reslt, reslt, NULL);
+    //构造SQL语句
+    char sql[SQL_LEN] = "UPDATE USER_PASSWD_TBL SET UNAME = ";  //SQL语句
+    char tmp[50] = {'\0'};
 
-    ret = sSqlChkRet (sqlHdl, ret, (const char*)__FUNCTION__);
+    sprintf(tmp, " '%s' WHERE UID = %d;", newName, uid);
+    strncat(sql, tmp, strlen(tmp)); //填充sql语句的 表名 部分
+
+    //执行SQL语句
+    ret = sqlite3_exec (sqlHdl, sql,  NULL, NULL, NULL);
+
+#ifdef _DEBUG
+    PRINTF("%s", sql);
+    sSqlChkRet (sqlHdl, ret, __FUNCTION__);
+#endif
+
+    return ret;
+}
+
+/*****************************************************************************
+ * DECRIPTION:
+ *      sDbUpdateUPasswd 更新 USER_PASSWD_TBL 表中的 UPASSWD
+ * INPUTS:
+ *      sqlHdl 操作数据库对象
+ *      uid
+ *      newPasswd 新的密码
+*****************************************************************************/
+STATUS sDbUpdatePasswd(sqlite3* sqlHdl, T_UID uid, T_UPASSWD newPasswd)
+{
+    STATUS ret = ERROR;
+
+    /* 入参检查 */
+    if (ISNULL(sqlHdl))
+    {
+    #ifdef _DEBUG
+        PRINTFILE;
+        PRINTF("[%s: sqlHdl is NULL.]", __FUNCTION__);
+    #endif
+        return INVALID_PARAM;
+    }
+
+    //构造SQL语句
+    char sql[SQL_LEN] = "UPDATE USER_PASSWD_TBL SET UPASSWD = ";  //SQL语句
+    char tmp[50] = {'\0'};
+
+    sprintf(tmp, " '%s' WHERE UID = %d;", newPasswd, uid);
+    strncat(sql, tmp, strlen(tmp)); //填充sql语句的 密码 部分
+
+    //执行SQL语句
+    ret = sqlite3_exec (sqlHdl, sql,  NULL, NULL, NULL);
+
+    #ifdef _DEBUG
+    PRINTF("%s", sql);
+    sSqlChkRet (sqlHdl, ret, __FUNCTION__);
+    #endif
+
+    return ret;
+}
+
+
+/*****************************************************************************
+ * DECRIPTION:
+ *      sDbUpdateUPasswd 更新 USER_INFO_TBL 表中的 SEX
+ * INPUTS:
+ *      sqlHdl 操作数据库对象
+ *      uid
+ *      newSex 新性别
+*****************************************************************************/
+STATUS sDbUpdateSex(sqlite3* sqlHdl, T_UID uid, T_USEX newSex)
+{
+    STATUS ret = ERROR;
+
+    /* 入参检查 */
+    if (ISNULL(sqlHdl))
+    {
+    #ifdef _DEBUG
+        PRINTFILE;
+        PRINTF("[%s: sqlHdl is NULL.]", __FUNCTION__);
+    #endif
+        return INVALID_PARAM;
+    }
+
+    //构造SQL语句
+    char sql[SQL_LEN] = "UPDATE USER_INFO_TBL SET SEX = ";  //SQL语句
+    char tmp[50] = {'\0'};
+
+    sprintf(tmp, " '%s' WHERE UID = %d;", newSex, uid);
+    strncat(sql, tmp, strlen(tmp));
+
+    //执行SQL语句
+    ret = sqlite3_exec (sqlHdl, sql,  NULL, NULL, NULL);
+
+    #ifdef _DEBUG
+    PRINTF("%s", sql);
+    sSqlChkRet (sqlHdl, ret, __FUNCTION__);
+    #endif
+
+    return ret;
+}
+
+/*****************************************************************************
+ * DECRIPTION:
+ *      sDbUpdateMail 更新 USER_INFO_TBL 表中的 EMAIL
+ * INPUTS:
+ *      sqlHdl 操作数据库对象
+ *      uid
+ *      newMail 新邮箱
+*****************************************************************************/
+STATUS sDbUpdateMail(sqlite3* sqlHdl, T_UID uid, T_USEX newMail)
+{
+    STATUS ret = ERROR;
+
+    /* 入参检查 */
+    if (ISNULL(sqlHdl))
+    {
+    #ifdef _DEBUG
+        PRINTFILE;
+        PRINTF("[%s: sqlHdl is NULL.]", __FUNCTION__);
+    #endif
+        return INVALID_PARAM;
+    }
+
+    //构造SQL语句
+    char sql[SQL_LEN] = "UPDATE USER_INFO_TBL SET EMAIL = ";  //SQL语句
+    char tmp[50] = {'\0'};
+
+    sprintf(tmp, " '%s' WHERE UID = %d;", newMail, uid);
+    strncat(sql, tmp, strlen(tmp));
+
+    //执行SQL语句
+    ret = sqlite3_exec (sqlHdl, sql,  NULL, NULL, NULL);
+
+    #ifdef _DEBUG
+    PRINTF("%s", sql);
+    sSqlChkRet (sqlHdl, ret, __FUNCTION__);
+    #endif
+
+    return ret;
+}
+
+/*****************************************************************************
+ * DECRIPTION:
+ *      sDbUpdateTel 更新 USER_INFO_TBL 表中的 TEL
+ * INPUTS:
+ *      sqlHdl 操作数据库对象
+ *      uid
+ *      newTel 新电话
+*****************************************************************************/
+STATUS sDbUpdateTel(sqlite3* sqlHdl, T_UID uid, T_UTEL newTel)
+{
+    STATUS ret = ERROR;
+
+    /* 入参检查 */
+    if (ISNULL(sqlHdl))
+    {
+    #ifdef _DEBUG
+        PRINTFILE;
+        PRINTF("[%s: sqlHdl is NULL.]", __FUNCTION__);
+    #endif
+        return INVALID_PARAM;
+    }
+
+    //构造SQL语句
+    char sql[SQL_LEN] = "UPDATE USER_INFO_TBL SET TEL = ";  //SQL语句
+    char tmp[50] = {'\0'};
+
+    sprintf(tmp, " '%s' WHERE UID = %d;", newTel, uid);
+    strncat(sql, tmp, strlen(tmp));
+
+    //执行SQL语句
+    ret = sqlite3_exec (sqlHdl, sql,  NULL, NULL, NULL);
+
+    #ifdef _DEBUG
+    PRINTF("%s", sql);
+    sSqlChkRet (sqlHdl, ret, __FUNCTION__);
+    #endif
+
+    return ret;
+}
+
+/*****************************************************************************
+ * DECRIPTION:
+ *      sDbUpdateRmk 更新 USER_FRDS_TBL 表中的 REMARK
+ * INPUTS:
+ *      sqlHdl 操作数据库对象
+ *      uid
+ *      newRmk 新备注
+*****************************************************************************/
+STATUS sDbUpdateRmk(sqlite3* sqlHdl, T_UID uid, T_FRD_REMARK newRmk)
+{
+    STATUS ret = ERROR;
+
+    /* 入参检查 */
+    if (ISNULL(sqlHdl))
+    {
+    #ifdef _DEBUG
+        PRINTFILE;
+        PRINTF("[%s: sqlHdl is NULL.]", __FUNCTION__);
+    #endif
+        return INVALID_PARAM;
+    }
+
+    //构造SQL语句
+    char sql[SQL_LEN] = "UPDATE USER_FRDS_TBL SET REMARK = ";  //SQL语句
+    char tmp[50] = {'\0'};
+
+    sprintf(tmp, " '%s' WHERE UID = %d;", newRmk, uid);
+    strncat(sql, tmp, strlen(tmp));
+
+    //执行SQL语句
+    ret = sqlite3_exec (sqlHdl, sql,  NULL, NULL, NULL);
+
+    #ifdef _DEBUG
+    PRINTF("%s", sql);
+    sSqlChkRet (sqlHdl, ret, __FUNCTION__);
+    #endif
+
+    return ret;
+}
+
+/*****************************************************************************
+ * DECRIPTION:
+ *      sDbUpdateStat 更新 USER_STAT_TBL 表中的 STAT
+ * INPUTS:
+ *      sqlHdl 操作数据库对象
+ *      uid
+ *      newStat 新状态
+*****************************************************************************/
+STATUS sDbUpdateStat(sqlite3* sqlHdl, T_UID uid, T_USTAT newStat)
+{
+    STATUS ret = ERROR;
+
+    /* 入参检查 */
+    if (ISNULL(sqlHdl))
+    {
+#ifdef _DEBUG
+        PRINTFILE;
+        PRINTF("[%s: sqlHdl is NULL.]", __FUNCTION__);
+#endif
+        return INVALID_PARAM;
+    }
+
+    //构造SQL语句
+    char sql[SQL_LEN] = "UPDATE USER_STAT_TBL SET STAT = ";  //SQL语句
+    char tmp[50] = {'\0'};
+
+    sprintf(tmp, " %d WHERE UID = %d;", newStat, uid);
+    strncat(sql, tmp, strlen(tmp));
+
+    //执行SQL语句
+    ret = sqlite3_exec (sqlHdl, sql,  NULL, NULL, NULL);
+
+#ifdef _DEBUG
+    PRINTF("%s", sql);
+    sSqlChkRet (sqlHdl, ret, __FUNCTION__);
+#endif
+
+    return ret;
+}
+
+
+/*****************************************************************************
+ * DECRIPTION:
+ *      获取用户名
+ * INPUTS:
+ *      sqlHdl 操作数据库对象
+ *      uid
+*****************************************************************************/
+T_UNAME sDbGetName(sqlite3 *sqlHdl, T_UID uid, T_UNAME name)
+{
+    T_UNAME ret = name;
+
+    /* 入参检查 */
+    if (ISNULL(sqlHdl))
+    {
+#ifdef _DEBUG
+        PRINTFILE;
+        PRINTF("[%s: sqlHdl is NULL.]", __FUNCTION__);
+#endif
+        return INVALID_PARAM;
+    }
+
+    //构造SQL语句
+    char sql[SQL_LEN] = "SELECT UNAME FROM USER_PASSWD_TBL WHERE UID = ";  //SQL语句
+    char tmp[50] = {'\0'};
+
+    sprintf(tmp, "%d;", uid);
+    strncat(sql, tmp, strlen(tmp));
+
+    //执行SQL语句
+    ret = sDbGetFromTbl(sqlHdl, sql, ret);
+
+#ifdef _DEBUG
+    PRINTF("%s", sql);
+    sSqlChkRet (sqlHdl, ret, __FUNCTION__);
+#endif
+
+    return ret;
+}
+
+/*****************************************************************************
+ * DECRIPTION:
+ *      用户的数据库密文密码
+ * INPUTS:
+ *      sqlHdl 操作数据库对象
+ *      uid
+*****************************************************************************/
+T_UPASSWD sDbGetPasswd(sqlite3 *sqlHdl, T_UID uid)
+{
+    T_UPASSWD ret = "NULL";
+
+    return ret;
+}
+
+/*****************************************************************************
+ * DECRIPTION:
+ *      获取用户性别 USER_INFO_TBL并将其填入S_USER结构体
+ * INPUTS:
+ *      sqlHdl 操作数据库对象
+ *      uid
+*****************************************************************************/
+T_USEX sDbGetSex(sqlite3* sqlHdl, T_UID uid)
+{
+    STATUS ret = ERROR;
+
+
+    return ret;
+}
+
+/*****************************************************************************
+ * DECRIPTION:
+ *      获取用户email USER_INFO_TBL
+ * INPUTS:
+ *      sqlHdl 操作数据库对象
+ *      uid
+**************************************************************/
+T_UMAIL sDbGetMail(sqlite3* sqlHdl, T_UID uid)
+{
+    STATUS ret = ERROR;
+
+
+    return ret;
+}
+
+/*****************************************************************************
+ * DECRIPTION:
+ *      获取用户TEL USER_INFO_TBL
+ * INPUTS:
+ *      sqlHdl 操作数据库对象
+ *      uid
+*****************************************************************************/
+T_UTEL sDbGetTel(sqlite3 *sqlHdl, T_UID uid)
+{
+    STATUS ret = ERROR;
+
+
+    return ret;
+}
+
+/*****************************************************************************
+ * DECRIPTION:
+ *      获取用户好友列表 USER_FRDS_TBL
+ * INPUTS:
+ *      sqlHdl 操作数据库对象
+ *      uid
+*****************************************************************************/
+T_UID* sDbGetFrdsList(sqlite3 *sqlHdl, T_UID uid)
+{
+    STATUS ret = ERROR;
+
+
+    return ret;
+}
+
+/*****************************************************************************
+ * DECRIPTION:
+ *      获取用户在线状态 USER_STAT_TBL
+ * INPUTS:
+ *      sqlHdl 操作数据库对象
+ *      uid
+*****************************************************************************/
+T_USTAT sDbGetStat(sqlite3 *sqlHdl, T_UID uid)
+{
+    STATUS ret = ERROR;
+
+
+    return ret;
+}
+
+/*****************************************************************************
+ * DECRIPTION:
+ *      获取用户验证问题答案 USER_VERIFY_TBL
+ * INPUTS:
+ *      sqlHdl 操作数据库对象
+ *      uid
+ * RETURN:
+ *      T_UVERIFIES* 保存验证问题的数组
+*****************************************************************************/
+T_UVERIFIES* sDbGetVerify(sqlite3 *sqlHdl, T_UID uid)
+{
+    STATUS ret = ERROR;
+
 
     return ret;
 }

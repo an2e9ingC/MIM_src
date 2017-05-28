@@ -84,14 +84,19 @@ int main()
 
     sDbInsertData2InfoTbl(sqlHdl, uid, "male", "xuchuaner@qq.com", "1810101");
     sDbInsertData2FrdsTbl(sqlHdl, uid, 111, "ftest1");
+    sDbInsertData2FrdsTbl(sqlHdl, 9, 222, "ftest2");
+    sDbDelDataFromFrdsTbl (sqlHdl, 9);
     sDbInsertData2StatTbl(sqlHdl, uid, ON_LINE);
     sDbInsertData2VerifyTbl(sqlHdl, uid, "yanzheng1", "yanzheng2", "yanzheng3");
+    sDbUpdateMail(sqlHdl, uid, "newmail@mail.com");
+
+    T_UNAME testname= (T_UNAME)malloc(UNAME_LEN);
+    sDbGetName (sqlHdl, uid, testname);
+    PRINTF("%d--name: %s.", uid, testname);
+    free(testname);
 
     T_UPASSWD passwd = (T_UPASSWD)malloc (UPASSWD_LEN);
 
-    ret = sDbSelectConditionFromTbl(sqlHdl,
-                                    "SELECT UPASSWD FROM USER_PASSWD_TBL WHERE UID=8;",
-                                    passwd);
     free(passwd);
 
     if(OK != sSqlChkRet (sqlHdl, ret, "test select"))

@@ -198,7 +198,7 @@ STATUS sDbInsertData2VerifyTbl
 
 /*****************************************************************************
  * DECRIPTION:
- *      sDbDelDataFromPasswdTbl() 从数据库的USER_PASSWD_TBL表中删除数据
+ *      sDbDelDataFromPasswdTbl() 从数据库的USER_PASSWD_TBL表中删除一条数据
  * INPUTS:
  *      sqlite3* sqlHdl
  *      uid     由系统生成的uid,
@@ -211,15 +211,11 @@ STATUS sDbInsertData2VerifyTbl
  * CAUTIONS:
  *      NONE
 *****************************************************************************/
-STATUS sDbDelDataFromPasswdTbl
-(
-        sqlite3 *sqlHdl,
-        T_UID uid,
-);
+STATUS sDbDelDataFromPasswdTbl(sqlite3 *sqlHdl, T_UID uid);
 
 /*****************************************************************************
  * DECRIPTION:
- *      sDbDelDataFromInfoTbl() 从数据库的 USER_INFO_TBL 表中删除数据
+ *      sDbDelDataFromInfoTbl() 从数据库的 USER_INFO_TBL 表中删除一条数据
  * INPUTS:
  *      sqlite3* sqlHdl
  *      uid
@@ -232,15 +228,11 @@ STATUS sDbDelDataFromPasswdTbl
  * CAUTIONS:
  *      NONE
 *****************************************************************************/
-STATUS sDbDelDataFromInfoTbl
-(
-    sqlite3 *sqlHdl,
-    T_UID uid
-);
+STATUS sDbDelDataFromInfoTbl(sqlite3 *sqlHdl, T_UID uid);
 
 /*****************************************************************************
  * DECRIPTION:
- *      sDbDelDataFromFrdsTbl() 从数据库的 USER_FRDS_TBL 表中删除数据
+ *      sDbDelDataFromFrdsTbl() 从数据库的 USER_FRDS_TBL 表中删除uid对应的所有数据
  * INPUTS:
  *      sqlite3* sqlHdl
  *      uid
@@ -255,15 +247,11 @@ STATUS sDbDelDataFromInfoTbl
  * CAUTIONS:
  *      NONE
 *****************************************************************************/
-STATUS sDbDelDataFromFrdsTbl
-(
-    sqlite3 *sqlHdl,
-    T_UID uid,
-);
+STATUS sDbDelDataFromFrdsTbl(sqlite3 *sqlHdl, T_UID uid);
 
 /*****************************************************************************
  * DECRIPTION:
- *      sDbDelData2StatTbl() 从数据库的 USER_STAT_TBL 表中删除数据
+ *      sDbDelDataFromStatTbl() 从数据库的 USER_STAT_TBL 表中删除一条数据
  * INPUTS:
  *      sqlite3* sqlHdl
  *      uId
@@ -277,11 +265,11 @@ STATUS sDbDelDataFromFrdsTbl
  * CAUTIONS:
  *      NONE
 *****************************************************************************/
-STATUS sDbDelData2StatTbl(sqlite3 *sqlHdl, T_UID uid);
+STATUS sDbDelDataFromStatTbl(sqlite3 *sqlHdl, T_UID uid);
 
 /*****************************************************************************
  * DECRIPTION:
- *      sDbDeltDataFromVerifyTbl() 向数据库的 USER_VERIFY_TBL 表中添加数据
+ *      sDbDelDataFromVerifyTbl() 向数据库的 USER_VERIFY_TBL 表中删除一条数据
  * INPUTS:
  *      sqlite3* sqlHdl
  *      uid
@@ -294,19 +282,15 @@ STATUS sDbDelData2StatTbl(sqlite3 *sqlHdl, T_UID uid);
  * CAUTIONS:
  *      NONE
 *****************************************************************************/
-STATUS sDbDeltDataFromVerifyTbl
-(
-        sqlite3 *sqlHdl,
-        T_UID uid
-);
+STATUS sDbDelDataFromVerifyTbl(sqlite3 *sqlHdl, T_UID uid);
 
 /*****************************************************************************
  * DECRIPTION:
- *      sDbSelectConditionFromTbl 从表中select出符合条件的表项，存到指针void* reslt中
+ *      sDbUpdateName 更新 USER_PASSWD_TBL 表中的 UNAME
  * INPUTS:
- *      sqlite3* sqlHdl 操作数据库对象
- *      char* condition 选择条件(需要是完整的SQL语句)
- *      void* reslt     存放查询的结果
+ *      sqlHdl 操作数据库对象
+ *      uid
+ *      newName 新的UNAME
  * OUTPUTS:
  *      NONE
  * RETURNS:
@@ -314,9 +298,186 @@ STATUS sDbDeltDataFromVerifyTbl
  *      ERROR   --  失败
  *      INVALID_PARAM --  参数错误
  * CAUTIONS:
- *      由于结果的数据结构不定，因此使用void*，最后要根据实际情况进行转化
+ *      NONE
 *****************************************************************************/
-STATUS sDbSelectConditionFromTbl(sqlite3* sqlHdl, char* condition, void* reslt);
+STATUS sDbUpdateName(sqlite3* sqlHdl, T_UID uid, T_UNAME newName);
+
+/*****************************************************************************
+ * DECRIPTION:
+ *      sDbUpdateUPasswd 更新 USER_PASSWD_TBL 表中的 UPASSWD
+ * INPUTS:
+ *      sqlHdl 操作数据库对象
+ *      uid
+ *      newPasswd 新的密码
+ * OUTPUTS:
+ *      NONE
+ * RETURNS:
+ *      OK      --  成功
+ *      ERROR   --  失败
+ *      INVALID_PARAM --  参数错误
+ * CAUTIONS:
+ *      NONE
+*****************************************************************************/
+STATUS sDbUpdatePasswd(sqlite3* sqlHdl, T_UID uid, T_UPASSWD newPasswd);
+
+/*****************************************************************************
+ * DECRIPTION:
+ *      sDbUpdateUPasswd 更新 USER_INFO_TBL 表中的 SEX
+ * INPUTS:
+ *      sqlHdl 操作数据库对象
+ *      uid
+ *      newSex 性别
+ * OUTPUTS:
+ *      NONE
+ * RETURNS:
+ *      OK      --  成功
+ *      ERROR   --  失败
+ *      INVALID_PARAM --  参数错误
+ * CAUTIONS:
+ *      NONE
+*****************************************************************************/
+STATUS sDbUpdateSex(sqlite3* sqlHdl, T_UID uid, T_USEX newSex);
+
+/*****************************************************************************
+ * DECRIPTION:
+ *      sDbUpdateMail 更新 USER_INFO_TBL 表中的 EMAIL
+ * INPUTS:
+ *      sqlHdl 操作数据库对象
+ *      uid
+ *      newMail 新邮箱
+ * OUTPUTS:
+ *      NONE
+ * RETURNS:
+ *      OK      --  成功
+ *      ERROR   --  失败
+ *      INVALID_PARAM --  参数错误
+ * CAUTIONS:
+ *      NONE
+*****************************************************************************/
+STATUS sDbUpdateMail(sqlite3* sqlHdl, T_UID uid, T_USEX newMail);
+
+/*****************************************************************************
+ * DECRIPTION:
+ *      sDbUpdateTel 更新 USER_INFO_TBL 表中的 TEL
+ * INPUTS:
+ *      sqlHdl 操作数据库对象
+ *      uid
+ *      newTel 新电话
+ * OUTPUTS:
+ *      NONE
+ * RETURNS:
+ *      OK      --  成功
+ *      ERROR   --  失败
+ *      INVALID_PARAM --  参数错误
+ * CAUTIONS:
+ *      NONE
+*****************************************************************************/
+STATUS sDbUpdateTel(sqlite3* sqlHdl, T_UID uid, T_UTEL newTel);
+
+/*****************************************************************************
+ * DECRIPTION:
+ *      sDbUpdateRmk 更新 USER_FRDS_TBL 表中的 REMARK
+ * INPUTS:
+ *      sqlHdl 操作数据库对象
+ *      uid
+ *      newRmk 新备注
+*****************************************************************************/
+STATUS sDbUpdateRmk(sqlite3* sqlHdl, T_UID uid, T_FRD_REMARK newRmk);
+
+/*****************************************************************************
+ * DECRIPTION:
+ *      sDbUpdateStat 更新 USER_STAT_TBL 表中的 STAT
+ * INPUTS:
+ *      sqlHdl 操作数据库对象
+ *      uid
+ *      newStat 新状态
+***************************************************************/
+STATUS sDbUpdateStat(sqlite3* sqlHdl, T_UID uid, T_USTAT newStat);
+
+/*****************************************************************************
+ * DECRIPTION:
+ *      获取用户名,根据user的uid查找数据库将其对应的用户名填入user
+ * INPUTS:
+ *      sqlHdl 操作数据库对象
+ *      uid
+ *      name    保存获取的用户名
+ * OUTPUTS:
+ *      NONE
+ * RETURNS:
+ *      成功  -   用户名
+ *      失败  -   NULL
+ * CAUTIONS:
+ *      调用要保证name参数能够足够大 来保存用户名
+*****************************************************************************/
+T_UNAME sDbGetName(sqlite3* sqlHdl, T_UID uid, T_UNAME name);
+
+/*****************************************************************************
+ * DECRIPTION:
+ *      用户的数据库密文密码
+ * INPUTS:
+ *      sqlHdl 操作数据库对象
+ *      uid
+*****************************************************************************/
+T_UPASSWD sDbGetPasswd(sqlite3* sqlHdl, T_UID uid);
+
+/*****************************************************************************
+ * DECRIPTION:
+ *      获取用户性别 USER_INFO_TBL并将其填入S_USER结构体
+ * INPUTS:
+ *      sqlHdl 操作数据库对象
+ *      uid
+*****************************************************************************/
+T_USEX sDbGetSex(sqlite3* sqlHdl, T_UID uid);
+
+/*****************************************************************************
+ * DECRIPTION:
+ *      获取用户email USER_INFO_TBL
+ * INPUTS:
+ *      sqlHdl 操作数据库对象
+ *      uid
+**************************************************************/
+T_UMAIL sDbGetMail(sqlite3* sqlHdl, T_UID uid);
+
+
+/*****************************************************************************
+ * DECRIPTION:
+ *      获取用户TEL USER_INFO_TBL
+ * INPUTS:
+ *      sqlHdl 操作数据库对象
+ *      uid
+*****************************************************************************/
+T_UTEL sDbGetTel(sqlite3* sqlHdl, T_UID uid);
+
+
+/*****************************************************************************
+ * DECRIPTION:
+ *      获取用户好友列表 USER_FRDS_TBL
+ * INPUTS:
+ *      sqlHdl 操作数据库对象
+ *      uid
+*****************************************************************************/
+ T_UID* sDbGetFrdsList(sqlite3* sqlHdl, T_UID uid);
+
+/*****************************************************************************
+ * DECRIPTION:
+ *      获取用户在线状态 USER_STAT_TBL
+ * INPUTS:
+ *      sqlHdl 操作数据库对象
+ *      uid
+*****************************************************************************/
+T_USTAT  sDbGetStat(sqlite3* sqlHdl, T_UID uid);
+
+/*****************************************************************************
+ * DECRIPTION:
+ *      获取用户验证问题答案 USER_VERIFY_TBL
+ * INPUTS:
+ *      sqlHdl 操作数据库对象
+ *      uid
+ * RETURN:
+ *      T_UVERIFIES* 保存验证问题的数组
+*****************************************************************************/
+T_UVERIFIES *sDbGetVerify(sqlite3* sqlHdl, T_UID uid);
 
 
 #endif // MIM_SERVER_H
+

@@ -15,131 +15,7 @@
 #include "mim_server_client_request.h"
 #include "mim_server_db.h"
 
-/*****************************************************************************
- * DECRIPTION:
- *      获取用户名
- * INPUTS:
- *      S_USER* user
- * OUTPUTS:
- *      S_USER* user
- * RETURNS:
- *      OK  处理成功
- *      ERROR   处理失败
- *      INVALID_PARAM --  参数错误
- * CAUTIONS:
- *      static
-*****************************************************************************/
-static STATUS sDbGetName(S_USER *user)
-{
-    STATUS ret = ERROR;
-    T_UNAME uName = (T_UNAME)malloc(UNAME_LEN);
-    T_UID uId = user->id;
-//    char* condition = "";
 
-//    sqlite3_exec ()
-
-
-    free(uName);
-    return ret;
-}
-
-/*****************************************************************************
- * DECRIPTION:
- *      用户的数据库密文密码
- * INPUTS:
- *      S_USER* user
-*****************************************************************************/
-static STATUS sDbGetPasswd(S_USER *user)
-{
-    STATUS ret = ERROR;
-
-
-    return ret;
-}
-
-/*****************************************************************************
- * DECRIPTION:
- *      获取用户性别 USER_INFO_TBL并将其填入S_USER结构体
- * INPUTS:
- *      S_USER* user
-*****************************************************************************/
-static STATUS sDbGetSex(S_USER* user)
-{
-    STATUS ret = ERROR;
-
-
-    return ret;
-}
-
-/*****************************************************************************
- * DECRIPTION:
- *      获取用户email USER_INFO_TBL
- * INPUTS:
- *      S_USER* user
-**************************************************************/
-static STATUS sDbGetMail(S_USER* user)
-{
-    STATUS ret = ERROR;
-
-
-    return ret;
-}
-
-/*****************************************************************************
- * DECRIPTION:
- *      获取用户TEL USER_INFO_TBL
- * INPUTS:
- *      S_USER* user
-*****************************************************************************/
-static STATUS sDbGetTel(S_USER* user)
-{
-    STATUS ret = ERROR;
-
-
-    return ret;
-}
-
-/*****************************************************************************
- * DECRIPTION:
- *      获取用户好友列表 USER_FRDS_TBL
- * INPUTS:
- *      S_USER* user
-*****************************************************************************/
-static STATUS sDbGetFrdsList(S_USER* user)
-{
-    STATUS ret = ERROR;
-
-
-    return ret;
-}
-
-/*****************************************************************************
- * DECRIPTION:
- *      获取用户在线状态 USER_STAT_TBL
- * INPUTS:
- *      S_USER* user
-*****************************************************************************/
-static STATUS sDbGetStat(S_USER* user)
-{
-    STATUS ret = ERROR;
-
-
-    return ret;
-}
-
-/*****************************************************************************
- * DECRIPTION:
- *      获取用户验证问题答案 USER_VERIFY_TBL
- * INPUTS:
- *      S_USER* user
-*****************************************************************************/
-static STATUS sDbGetVerify(S_USER* user)
-{
-    STATUS ret = ERROR;
-
-
-    return ret;
-}
 
 /*****************************************************************************
  * DECRIPTION:
@@ -188,14 +64,14 @@ STATUS sDbGetUserInfo(S_USER* user)
     }
 
     /*调用static函数获取相关基本信息*/
-    ret = sDbGetName(user);
-    ret = sDbGetPasswd(user);
-    ret = sDbGetSex (user);
-    ret = sDbGetMail (user);
-    ret = sDbGetTel (user);
-    ret = sDbGetFrdsList(user);
-    ret = sDbGetStat (user);
-    ret = sDbGetVerify(user);
+//    ret = sDbGetName(user);
+//    ret = sDbGetPasswd(user);
+//    ret = sDbGetSex (user);
+//    ret = sDbGetMail (user);
+//    ret = sDbGetTel (user);
+//    ret = sDbGetFrdsList(user);
+//    ret = sDbGetStat (user);
+//    ret = sDbGetVerify(user);
 
     return ret;
 }
