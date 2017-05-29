@@ -39,6 +39,11 @@ typedef int BOOL;   //处理结果使用自定义的BOOL类型
 #define USEX_LEN 7  //MALE,FEMALE 最长为6,还需要留 '\0' 一个字节
 #define UMAIL_LEN 33    //邮箱地址长度
 #define UTEL_LEN 12 //国内手机号长度11
+#define USTAT_LEN   2
+#define UVERIFY_COUNT   2   //验证问题数量
+
+#define SERVER_IP   "138.128.207.140"   //客户端连接的服务器ip地址
+#define SERVER_PORT 2017    //服务器的公开端口
 
 /* 定义C/S之间的通信命令标志，使用枚举类csCmd来表示，用于C/S之间命令鉴别 */
 typedef enum e_CommonCmd{
@@ -116,8 +121,8 @@ typedef struct {
 typedef struct {
     T_CSCMD cmd;    //请求命令
     T_UNAME uName;
-    T_UVERIFIES Q1; //验证信息*2
-    T_UVERIFIES Q2;
+    T_UVERIFIES q1; //验证信息*2
+    T_UVERIFIES q2;
     T_UPASSWD uPasswd;
 }CR_REG;
 
@@ -173,7 +178,7 @@ typedef struct{
 }SR_SYNC;
 
 //定义User结构体,主要可以用户服务器从数据库读取数据后，方便保存信息
-typedef struct{
+typedef struct _user{
     T_UID   id;    //用户id
     T_UNAME name;  //用户名字
     T_UPASSWD passwd;  //用户密码
@@ -181,9 +186,7 @@ typedef struct{
     T_UMAIL mail;  //用户邮箱
     T_UTEL tel;    //用户电话
     T_USTAT stat;  //用户在线状态
-    T_UVERIFIES q1; //用户验证问题答案1
-    T_UVERIFIES q2; //用户验证问题答案2
-    T_UVERIFIES q3; //用户验证问题答案3
+    T_UVERIFIES verifies[UVERIFY_COUNT]; //用户验证问题答案3个
     T_UID frdsList[FRD_COUNT_LIMIT];    //用户的好友列表
 }S_USER;
 

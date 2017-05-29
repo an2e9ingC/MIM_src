@@ -26,6 +26,7 @@
 #define SQL_LEN 200 //定义SQL语句长度
 
 extern sqlite3 *sqlHdl;
+extern sqlite3** pSqlHdl;
 
 /*****************************************************************************
  * DECRIPTION:
@@ -176,7 +177,7 @@ STATUS sDbInsertData2StatTbl(sqlite3 *sqlHdl, T_UID uid, T_USTAT uStat);
  * INPUTS:
  *      sqlite3* sqlHdl
  *      uid
- *      q1,q2,q3     验证问题（3个）
+ *      q1,q2     验证问题（2个）
  * OUTPUTS:
  *      NONE
  * RETURNS:
@@ -191,8 +192,7 @@ STATUS sDbInsertData2VerifyTbl
         sqlite3 *sqlHdl,
         T_UID uid,
         T_UVERIFIES q1,
-        T_UVERIFIES q2,
-        T_UVERIFIES q3
+        T_UVERIFIES q2
 );
 
 
@@ -488,6 +488,21 @@ T_USTAT  sDbGetStat(sqlite3* sqlHdl, T_UID uid);
 *****************************************************************************/
 T_UVERIFIES *sDbGetVerify(sqlite3* sqlHdl, T_UID uid, T_UVERIFIES *verifyArray);
 
+/*****************************************************************************
+ * DECRIPTION:
+ *      生成一个未用的用户id
+ * INPUTS:
+ *      sqlHdl
+ * OUTPUTS:
+ *      生成的uid
+ * RETURNS:
+ *      OK      --  成功
+ *      ERROR   --  失败
+ *      INVALID_PARAM --  参数错误
+ * CAUTIONS:
+ *      NONE
+*****************************************************************************/
+T_UID sDbGenUid(sqlite3* sqlHdl);
 
 #endif // MIM_SERVER_H
 

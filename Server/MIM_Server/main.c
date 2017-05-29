@@ -18,10 +18,26 @@
 #include <sqlite3.h>
 #include <string.h>
 
+#include <unistd.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <fcntl.h>
+#include <pthread.h>
+
 #include "mim_sc_common.h"
 #include "mim_server_db.h"
+#include "mim_server_client_request.h"
+#include "server_socket.h"
 
+/* 全局变量，因为本程序只使用一个数据库对象 */
 sqlite3 *sqlHdl = NULL; //SQL处理对象指针
+sqlite3** pSqlHdl = &sqlHdl;    //二级指针
+
+void newThreadWork(void)
+{
+    PRINTF("this is a new thread = %lu.", pthread_self ());
+    return ;
+}
 
 int main()
 {
@@ -63,55 +79,55 @@ int main()
 
 
     /************test**************/
-    CR_REG *reg = (CR_REG *)malloc(sizeof(CR_REG));
-    reg->uName = "xuchuan";
-    reg->Q1 = "China";
-    reg->Q2 = "1994";
-    reg->uPasswd= "adsjfasiofajg";
-
-    T_UID uid = 8;
-    ret = sDbInsertData2PasswdTbl(sqlHdl, uid, reg->uName, reg->uPasswd);
-    if(OK != sSqlChkRet (sqlHdl, ret, "test insert"))
-    {
-        PRINTF("__sDbInsertData2PasswdTbl__: FAILED.");
-        return -1;
-    }
-    else
-    {
-        PRINTF("__sDbInsertData2PasswdTbl__: OK.");
-    }
-
-    free(reg);
-
-    sDbInsertData2InfoTbl(sqlHdl, uid, "male", "xuchuaner@qq.com", "1810101");
-    sDbInsertData2FrdsTbl(sqlHdl, uid, 111, "ftest1");
-    sDbInsertData2FrdsTbl(sqlHdl, uid, 222, "ftest2");
-    sDbInsertData2StatTbl(sqlHdl, uid, ON_LINE);
-    sDbInsertData2VerifyTbl(sqlHdl, uid, "yanzheng1", "yanzheng2", "yanzheng3");
-    sDbUpdateMail(sqlHdl, uid, "newmail@mail.com");
-
-    T_UNAME testname= (T_UNAME)malloc(UNAME_LEN);
-    bzero(testname, UNAME_LEN);
-    sDbGetName (sqlHdl, uid, testname);
-    PRINTF("%d--name: %s....", uid, testname);
-    free(testname);
-
-    T_UID frdList[FRD_COUNT_LIMIT] = {0};
-    int frdCount = sDbGetFrdsList(sqlHdl, uid, frdList);
-    PRINTF("%d has %d friends.", uid, frdCount);
-
-
-    if(OK != sSqlChkRet (sqlHdl, ret, "test select"))
-    {
-        PRINTF("__sDbSelectConditionFromTbl__: FAILED.");
-        return -1;
-    }
-    else
-    {
-        PRINTF("__sDbSelectConditionFromTbl__: OK.");
-    }
-
     /************test**************/
+
+
+    /* 主进程 */
+    SAIN servAddr, clientAddr;  //定义服务器和客户端的地址结构体
+    int listenfd, connfd;   //监听、连接套接字
+    int clientAddrLen = sizeof(clientAddr);  //客户端socket地址大小
+    ssize_t realRead, realWrite;    //实际接收到的和发送的数据大小
+    char buf[BUF_SIZE] = {'\0'};    //暂存接收和发送的数据buf
+
+    /* 1. 创建套接字 */
+    listenfd = socketCreate (AF_INET, SOCK_STREAM, 0);   //创建监听套接字,tcp,流式
+
+    /* 创建监听的地址 */
+    bzero(&servAddr, sizeof(servAddr));
+    servAddr.sin_family = AF_INET;  //采取TCP协议
+    servAddr.sin_port = htons(SERVER_PORT); //指定端口2017
+    servAddr.sin_addr.s_addr = htonl(INADDR_ANY); //系统自动获取本机的IP地址
+
+    /* 2. 绑定到套接字 */
+    socketBind (listenfd, (const SA*)&servAddr, sizeof(servAddr));
+
+    /* 3.监听 */
+    socketListen (listenfd, BACKLOG);
+
+    while(1)
+    {
+        printf("======waiting for client's request======\n");
+        pthread_t newThread;
+
+        //阻塞，知道服务器接收到一个新的 connect 请求
+        connfd = socketAccept (listenfd, (SA*)&servAddr, (socklen_t*)&clientAddrLen);
+        if(connfd < -1)
+        {
+            continue;   //继续loop， 知道有connect
+        }
+
+        //当有新的客户端连接后，创建新的线程进行服务
+        PRINTF("Got a New connection. connfd = %d.", connfd);
+        if(-1 == pthread_create(&newThread, NULL, (void*)(&newThreadWork), NULL))
+        {
+            PRINTF("New Thread Created Failed.");
+        }
+
+
+    }
+
+
+
 
     /* 关闭数据库 */
     sDbClose (sqlHdl);

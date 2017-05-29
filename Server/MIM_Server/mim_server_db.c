@@ -18,12 +18,14 @@
  *                          添加多个好友
  *      2017-05-29 02:21:03 sDbCallbackSave2FrdsList 函数需要处理（！！！！）
  *                          sDbGetFrdsList（！！！）
+ *      2017-05-29 14:58:52 修改用户状态表，添加了用户在线时的IP地址和端口号
 *****************************************************************************/
 #include <stdio.h>
 #include <stdlib.h>
 #include <sqlite3.h>
 #include <errno.h>
 #include <string.h>
+#include <strings.h>
 
 #include "mim_sc_common.h"
 #include "mim_server_db.h"
@@ -122,8 +124,10 @@ static STATUS sTblUserStatInit(sqlite3* sqlHdl)
 {
     STATUS ret = ERROR;
     char *sql = "CREATE TABLE USER_STAT_TBL("
-                "UID    INT     PRIMARY KEY     NOT NULL,\n"
-                "STAT   INT                    NOT NULL\n"
+                "UID        INT     PRIMARY KEY     NOT NULL,\n"
+                "STAT       INT                     NOT NULL,\n"
+                "IP_ADDR    TEXT,\n"
+                "PORT       TEXT\n"
                 ");";
 
     ret = sqlite3_exec (sqlHdl, sql, 0, 0, 0);
@@ -201,6 +205,7 @@ static int sDbCallbackSave2Reslt(void *reslt, int colNum, char **colVal, char **
 {
     int i;
     char * tmp = NULL;
+    bzero (reslt, UNAME_LEN);
 
     for(i=0; i<colNum; i++){
         tmp = colVal[i] ? colVal[i] : "NULL";
@@ -227,7 +232,6 @@ static int sDbCallbackSave2Reslt(void *reslt, int colNum, char **colVal, char **
 *******************************************************************************/
 static int sDbCallbackSave2FrdsList(void *reslt, int colNum, char **colVal, char **colName)
 {
-    int i;
 //    char tmp[10] = {'\0'};  //临时存储好友的id（字符串型）
 
 //    for(i=0; i<colNum; i++){
@@ -276,7 +280,7 @@ static STATUS sDbGetFromTbl(sqlite3 *sqlHdl, char *condition, void *reslt)
  * CAUTIONS:
  *      调用者负责入参的合法性
 *****************************************************************************/
-static int sDbCountUidOfTbl(sqlite3* sqlHdl, char* tblName, T_UID uid)
+int sDbCountUidOfTbl(sqlite3* sqlHdl, char* tblName, T_UID uid)
 {
     char sql[SQL_LEN] = "SELECT COUNT(UID) FROM ";//统计uid好友数量
     char tmp[50] = {'\0'};
@@ -401,7 +405,7 @@ void sDbClose(sqlite3 *sqlHdl)
         EXIT(EXIT_FAILURE);
     }
 
-    STATUS ret = sqlite3_close_v2(sqlHdl);
+    STATUS ret = sqlite3_close(sqlHdl);
     if (SQLITE_OK == ret)
     {
         PRINTF("[DB Closed OK.]");
@@ -678,16 +682,14 @@ STATUS sDbInsertData2StatTbl(sqlite3 *sqlHdl, T_UID uid, T_USTAT uStat)
  * INPUTS:
  *      sqlite3* sqlHdl
  *      T_UID
- *      T_UVERIFIES     验证问题（3个）
- *      T_UVERIFIES
- *      T_UVERIFIES
+ *      T_UVERIFIES     验证问题（2个）
 *****************************************************************************/
 STATUS sDbInsertData2VerifyTbl
-(sqlite3 *sqlHdl,
+(
+        sqlite3 *sqlHdl,
         T_UID uid,
         T_UVERIFIES q1,
-        T_UVERIFIES q2,
-        T_UVERIFIES q3
+        T_UVERIFIES q2
 )
 {
     STATUS ret = ERROR;
@@ -712,11 +714,8 @@ STATUS sDbInsertData2VerifyTbl
     sprintf(tmp, "  '%s',", q1);
     strncat(sql, tmp, strlen(tmp)); //填充sql语句的 Q1 部分
 
-    sprintf(tmp, "  '%s',", q2);
+    sprintf(tmp, "  '%s';", q2);
     strncat(sql, tmp, strlen(tmp)); //填充sql语句的 Q2 部分
-
-    sprintf(tmp, "  '%s');", q3);
-    strncat(sql, tmp, strlen(tmp)); //填充sql语句的 Q3 部分
 
     //执行SQL语句
     ret = sqlite3_exec (sqlHdl, sql,  NULL, NULL, NULL);
@@ -1161,7 +1160,7 @@ T_UNAME sDbGetName(sqlite3 *sqlHdl, T_UID uid, T_UNAME name)
         PRINTFILE;
         PRINTF("[%s: sqlHdl is NULL.]", __FUNCTION__);
 #endif
-        return INVALID_PARAM;
+        return NULL;
     }
 
     //构造SQL语句
@@ -1202,7 +1201,7 @@ T_UPASSWD sDbGetPasswd(sqlite3 *sqlHdl, T_UID uid, T_UPASSWD passwd)
         PRINTFILE;
         PRINTF("[%s: sqlHdl is NULL.]", __FUNCTION__);
 #endif
-        return INVALID_PARAM;
+        return NULL;
     }
 
     //构造SQL语句
@@ -1243,7 +1242,7 @@ T_USEX sDbGetSex(sqlite3* sqlHdl, T_UID uid, T_USEX sex)
         PRINTFILE;
         PRINTF("[%s: sqlHdl is NULL.]", __FUNCTION__);
 #endif
-        return INVALID_PARAM;
+        return NULL;
     }
 
     //构造SQL语句
@@ -1284,7 +1283,7 @@ T_UMAIL sDbGetMail(sqlite3* sqlHdl, T_UID uid, T_UMAIL mail)
         PRINTFILE;
         PRINTF("[%s: sqlHdl is NULL.]", __FUNCTION__);
 #endif
-        return INVALID_PARAM;
+        return NULL;
     }
 
     //构造SQL语句
@@ -1326,7 +1325,7 @@ T_UTEL sDbGetTel(sqlite3 *sqlHdl, T_UID uid, T_UTEL tel)
         PRINTFILE;
         PRINTF("[%s: sqlHdl is NULL.]", __FUNCTION__);
 #endif
-        return INVALID_PARAM;
+        return NULL;
     }
 
     //构造SQL语句
@@ -1358,7 +1357,7 @@ T_UTEL sDbGetTel(sqlite3 *sqlHdl, T_UID uid, T_UTEL tel)
 *****************************************************************************/
 int sDbGetFrdsList(sqlite3 *sqlHdl, T_UID uid, T_UID *frdList)
 {
-    T_UID* retList = frdList;
+//    T_UID* retList = frdList;
     int count = 0;
     STATUS ret = ERROR;
 
@@ -1417,7 +1416,7 @@ T_USTAT sDbGetStat(sqlite3 *sqlHdl, T_UID uid)
     }
 
     //构造SQL语句
-    char sql[SQL_LEN] = "SELECT TEL FROM USER_STAT_TBL WHERE UID = ";
+    char sql[SQL_LEN] = "SELECT STAT FROM USER_STAT_TBL WHERE UID = ";
     char tmp[50] = {'\0'};
 
     sprintf(tmp, "%d;", uid);
@@ -1448,4 +1447,31 @@ T_USTAT sDbGetStat(sqlite3 *sqlHdl, T_UID uid)
 T_UVERIFIES* sDbGetVerify(sqlite3 *sqlHdl, T_UID uid, T_UVERIFIES* verifyArray)
 {
     // 同frdList 需要处理！！！
+    return NULL;
+}
+
+/*****************************************************************************
+ * DECRIPTION:
+ *      生成一个未用的用户id
+ * INPUTS:
+ *      sqlHdl
+*****************************************************************************/
+T_UID sDbGenUid(sqlite3* sqlHdl)
+{
+    PRINTF("sDbGenUid: sqlHdl = %s.", (char*)sqlHdl);
+    int ret = 0;
+    char countStr[5] = {'\0'};  //用户回调函数的临时存放 字符串型的数量
+    int curCount = 0;   //统计的当前表中的用户数量
+    char sql[SQL_LEN] = "SELECT COUNT(UID) FROM USER_PASSWD_TBL;";//统计uid好友数量
+
+    ret = sqlite3_exec (sqlHdl, sql, sDbCallbackSave2Reslt, countStr, NULL);
+
+    curCount = atoi(countStr);
+
+#ifdef _DEBUG
+    PRINTF("%s", sql);
+    sSqlChkRet (sqlHdl, ret, __FUNCTION__);
+#endif
+
+    return curCount+1;  //返回未用的最大uid
 }
