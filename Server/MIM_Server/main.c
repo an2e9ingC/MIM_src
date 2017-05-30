@@ -24,6 +24,8 @@
 #include <netinet/in.h>
 #include <fcntl.h>
 #include <pthread.h>
+#include <arpa/inet.h>  //网络/本地地址转换
+
 
 #include "mim_sc_common.h"
 #include "mim_server_db.h"
@@ -39,7 +41,7 @@ sqlite3** pSqlHdl = &sqlHdl;    //二级指针
  *      serverWork() 新客户端连接后的核心处理函数
  *      负责处理用户请求
  * INPUTS:
- *      NONE
+ *      clientAddr  连接的客户端socket地址
  * OUTPUTS:
  *      NONE
  * RETURNS:
@@ -49,13 +51,17 @@ sqlite3** pSqlHdl = &sqlHdl;    //二级指针
  * CAUTIONS:
  *      NONE
 *****************************************************************************/
-void serverWork(void)
+void serverWork(SAIN* clientAddr)
 {
     ssize_t realRead, realWrite;    //实际接收到的和发送的数据大小
     char buf[BUF_SIZE] = {'\0'};    //暂存接收和发送的数据buf
 
-
     PRINTF("this is a new thread = %lu.", pthread_self ());
+
+    PRINTF("Client IP: %s:%d.",
+           inet_ntoa(clientAddr->sin_addr),
+           ntohs(clientAddr->sin_port));
+
     return ;
 }
 
@@ -137,7 +143,7 @@ int main()
         pthread_t newThread;
 
         //阻塞，知道服务器接收到一个新的 connect 请求
-        connfd = socketAccept (listenfd, (SA*)&servAddr, (socklen_t*)&clientAddrLen);
+        connfd = socketAccept (listenfd, (SA*)&clientAddrLen, (socklen_t*)&clientAddrLen);
         if(connfd < -1)
         {
             continue;   //继续loop， 知道有connect
@@ -145,7 +151,7 @@ int main()
 
         //当有新的客户端连接后，创建新的线程为其进行服务
         PRINTF("Got a New connection. connfd = %d.", connfd);
-        if(-1 == pthread_create(&newThread, NULL, (void*)(&serverWork), NULL))
+        if(-1 == pthread_create(&newThread, NULL, (void*)(&serverWork), &clientAddr))
         {
             PRINTF("New Thread Created Failed.");
         }
