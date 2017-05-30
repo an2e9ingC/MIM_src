@@ -11,6 +11,7 @@
 #define BUFF_SIZE 4096
 #define PORT 2017
 #define IP "127.0.0.1"
+//#define IP "138.128.207.140"
 
 void initAddr(SAIN* addr, const char* ip, unsigned int port);
 

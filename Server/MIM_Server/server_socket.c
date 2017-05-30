@@ -9,7 +9,7 @@
  *      2017-05-29 21:04:18
  * MODIFICATION HISTORY:
  * --------------------------------------
- *
+ *      2017-05-30 11:28:43 修改 socketCreate, 添加了设置socket为reuse属性
 *****************************************************************************/
 #include <errno.h>
 #include <stdio.h>
@@ -20,7 +20,7 @@
 
 /*****************************************************************************
  * DECRIPTION:
- *      SocketCreate() 根据参数创建套接字
+ *      SocketCreate() 根据参数创建套接字, 套接字设置为可复用
  * INPUTS:
  *      int domain      //协议族 AF_INET
  *      int type        //socket类型  流式TCP
@@ -35,6 +35,15 @@ int socketCreate(int domain, int type, int protocol)
         perror("socket");
         exit(EXIT_FAILURE);
     }
+
+    //设置套接字可以 reuse
+    int reuse = 1;
+    if (setsockopt(ret, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) < 0)
+    {
+             perror("setsockopet error\n");
+             return -1;
+    }
+
     return ret;
 }
 
