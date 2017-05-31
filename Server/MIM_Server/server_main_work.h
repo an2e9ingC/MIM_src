@@ -1,0 +1,4 @@
+#ifndef SERVER_MAIN_WORK_H
+#define SERVER_MAIN_WORK_H
+
+#endif // SERVER_MAIN_WORK_H
